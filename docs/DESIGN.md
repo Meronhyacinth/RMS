@@ -33,3 +33,7 @@ Cards use 13px corners, inputs/buttons 7–8px and avatar circles. Navy is the p
 Replaced font glyphs with a local Lucide SVG subset (26 icons), consistent 24-unit geometry, 1.75 strokes, currentColor, decorative ARIA attributes and labelled controls. A people/check mark identifies the recruitment workspace and provides its favicon. Navigation uses dashboard, document, approval badge, Kanban, archive, chart, history and settings icons. Notification, appearance, refresh, export, add, close and next actions share the same family. All assets are bundled locally; licensing is retained in vendor/LUCIDE-LICENSE.txt.
 
 Applied Taste's targeted existing-project audit and Finesse's component-scope consistency guidance. Existing GSAP matchMedia/reduced-motion behavior remains in place. Darwin concerns skill optimization; no skill files were modified. Codegraph remains ambiguous and no unavailable CLI run is claimed. Browser visual QA is unavailable in this managed environment; syntax, screen-rendering and production-build checks are performed.
+
+## Recruit Centinel identity
+
+The product name is Recruit Centinel. Its lowercase, tightly spaced bold wordmark follows the supplied company reference; a matching rc monogram replaces the previous arrow logo. Lettering is converted to vector paths for consistent rendering without font dependencies. Navy and white SVG variants are bundled.
