@@ -37,3 +37,7 @@ Applied Taste's targeted existing-project audit and Finesse's component-scope co
 ## Recruit Centinel identity
 
 The product name is Recruit Centinel. Its lowercase, tightly spaced bold wordmark follows the supplied company reference; a matching rc monogram replaces the previous arrow logo. Lettering is converted to vector paths for consistent rendering without font dependencies. Navy and white SVG variants are bundled.
+
+## Restored product symbol
+
+The rejected rc initials have been replaced by the original C-and-forward-arrow symbol. The full Recruit Centinel wordmark now includes that symbol, with navy/white variants and a matching favicon.
