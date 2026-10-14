@@ -1,0 +1,16 @@
+services:
+  rms:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:3000"
+    volumes:
+      - rms-data:/data
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  rms-data:

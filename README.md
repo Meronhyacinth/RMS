@@ -55,3 +55,7 @@ Administrator Settings include editable recruitment email, sender display name a
 ## Deployment configuration
 
 Copy `.openai/hosting.example.json` to `.openai/hosting.json` before a local build. Register your own Site and use its returned project ID. Configure RMS_OWNER_EMAIL, RMS_ADMIN_PASSWORD_HASH and RMS_SESSION_SECRET as private runtime settings. Existing private deployment identifiers, passwords and runtime secrets are excluded from this public repository.
+
+## Run on Ubuntu using the server IP
+
+See [Ubuntu console deployment instructions](docs/UBUNTU.md). The standalone Docker option runs Node 24 with SQLite and private local file storage, without a Cloudflare account or ChatGPT sign-in. Set the admin password interactively; runtime secrets are not shipped in source.

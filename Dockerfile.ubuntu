@@ -1,0 +1,11 @@
+FROM node:24-bookworm-slim
+WORKDIR /app
+COPY lib ./lib
+COPY public ./public
+COPY drizzle ./drizzle
+COPY scripts/ubuntu-server.mjs scripts/ubuntu-setup.mjs ./scripts/
+RUN mkdir /data && chown node:node /data
+USER node
+ENV RMS_DATA_DIR=/data PORT=3000
+EXPOSE 3000
+CMD ["node", "scripts/ubuntu-server.mjs"]
