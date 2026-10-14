@@ -1,5 +1,9 @@
 # Design and implementation notes
 
+## Centinals redesign
+
+The supplied Centinals wordmark anchors the current identity. A new vector C and forward arrow mark represents recruitment progress; navy and white variants and a matching favicon are bundled in public/brand. Original company wordmarks are preserved as PNG assets. The interface uses a navy navigation rail, quiet white work surfaces, readable tables, restrained status colours and a branded split login. public/brand.css supplies responsive and dark-mode refinements. Authentication, permissions and hiring workflows retain their existing behavior.
+
 The user's screenshot is the visual authority: navy headings, a cool pale background, white rounded panels, softly tinted semantic statuses and generous spacing. The app adapts that vocabulary to an HR workspace with sidebar navigation and a readable request register. Decorative photography is intentionally unnecessary for this operational product.
 
 ## Requested skill references
