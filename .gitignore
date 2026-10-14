@@ -1,0 +1,10 @@
+node_modules
+
+.next/
+.wrangler/
+.openai/local/
+.env*
+!.env.example
+dist/
+
+.openai/hosting.json
