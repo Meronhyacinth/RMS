@@ -64,5 +64,5 @@ const ids=new Set(Array.from({length:50},()=>demoRecordId()));assert.equal(ids.s
 const t=tickets.find(t=>t.candidates?.length),c=t.candidates[0],before=c.documents.length;
 await uploadCandidateDocument({preventDefault(){},target:{file:{files:[{name:'sample.pdf',size:100}]},kind:{value:'Resume'}}},t.id,c.id);
 assert.equal(c.documents.length,before+1);assert.ok(c.documents.at(-1).url.startsWith('data:application/pdf'));assert.equal(busy,false);
-console.log('PASS: demo résumé upload works without crypto.randomUUID on HTTP LAN browsers');
+window.confirm=()=>true;await deleteCandidateDocument(t.id,c.id,c.documents.at(-1).id);assert.equal(c.documents.length,before);console.log('PASS: demo résumé upload and document deletion work without crypto.randomUUID on HTTP LAN browsers');
 })()`,context);})().catch(e=>{console.error(e);process.exitCode=1;});

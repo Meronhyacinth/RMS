@@ -69,7 +69,12 @@ const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEm
  const assignedInterview=candidateTicket.interviews.find(i=>i.candidateId===alpha.id);await change('feedback',id,{interviewId:assignedInterview.id,text:'Suitable skills',recommendation:'Proceed'});
  act('manager@example.com');assert.equal((await ticket(id)).candidates.length,0);assert.equal((await handle(new Request(BASE+'files/'+alphaFile))).status,403);
  act('hr@example.com');
- console.log('PASS: candidate creation, duplicate applications, private resume upload, PDF preview, candidate-level interviewer isolation and HR-only profile updates');
+const betaKey=sqlite.prepare('SELECT key FROM files WHERE id=?').get(betaFile).key;
+ act('interviewer@example.com');candidateTicket=await ticket(id);assert.equal((await call('delete-candidate-document',{id,version:candidateTicket.version,candidateId:alpha.id,documentId:alphaFile})).status,403);
+ act('hr@example.com');candidateTicket=await ticket(id);assert.equal((await call('delete-candidate-document',{id,version:candidateTicket.version-1,candidateId:beta.id,documentId:betaFile})).status,409);assert.ok(objects.has(betaKey));
+ await change('delete-candidate-document',id,{candidateId:beta.id,documentId:betaFile});assert.equal(objects.has(betaKey),false);assert.equal(sqlite.prepare('SELECT * FROM files WHERE id=?').get(betaFile),undefined);assert.equal((await handle(new Request(BASE+'files/'+betaFile))).status,404);assert.equal((await ticket(id)).candidates.find(c=>c.id===beta.id).documents.length,0);assert.equal((await ticket(id)).candidates.find(c=>c.id===alpha.id).documents.length,1);assert.ok((await ticket(id)).history.some(h=>h.text==='Candidate document deleted'));
+ console.log('PASS: HR-only candidate document deletion, stale-write protection, private-object removal and audit history');
+  console.log('PASS: candidate creation, duplicate applications, private resume upload, PDF preview, candidate-level interviewer isolation and HR-only profile updates');
  await change('transition',id,{status:'Feedback Pending',reason:'Interview complete'});t=await ticket(id);
  assert.equal((await call('transition',{id,version:t.version,status:'Offer Preparation',reason:'Try skipping feedback'})).status,400);
  act('interviewer@example.com');t=await ticket(id);assert.equal(t.salaryMin,undefined);assert.equal(t.replacement,undefined);assert.equal(t.interviews.length,2);

@@ -32,11 +32,12 @@ async function approvalRoute(t:Ticket,s:any){
 }
 function payload(data:Ticket){const keys=['positionGroup','title','bu','manager','managerEmail','team','grade','vacancies','employment','duration','location','justification','target','priority','urgency','requirements','salaryMin','salaryMax','budget','costCentre','replacement','vacancyDate','type'];const o:Ticket={};for(const k of keys)o[k]=typeof data[k]==='string'?clean(data[k],['requirements','justification'].includes(k)?6000:200):data[k];o.managerEmail=clean(o.managerEmail).toLowerCase();o.vacancies=+o.vacancies;o.salaryMin=+o.salaryMin;o.salaryMax=+o.salaryMax;return o;}
 function checkInput(t:Ticket,draft:boolean){validateInput(t,draft);if(draft)return;if(!validEmail(t.managerEmail))fail('Enter a valid hiring manager email.');if(!iso(t.target))fail('Choose a valid joining date.');if(t.type==='Replacement'&&!iso(t.vacancyDate))fail('Choose a valid vacancy date.');if(!['Permanent','Contract','Temporary','Internship'].includes(t.employment))fail('Choose an employment type.');}
-async function record(t:Ticket,m:Member,text:string,version?:number,file?:any){
+async function record(t:Ticket,m:Member,text:string,version?:number,file?:any,deletedFileId?:string){
  const at=new Date().toISOString(),mutation=crypto.randomUUID();t.updatedAt=at;t.history??=[];t.history.push({at,actor:m.name,text});
  const statements=version===undefined?[stmt('INSERT INTO tickets (id,data,version,mutation) VALUES (?,?,1,?)',t.id,JSON.stringify(t),mutation)]:[stmt('UPDATE tickets SET data=?,version=version+1,mutation=? WHERE id=? AND version=?',JSON.stringify(t),mutation,t.id,version)];
  statements.push(stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) SELECT ?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',crypto.randomUUID(),t.id,at,m.name,m.user_id,text,t.id,mutation));
  if(file)statements.push(stmt('INSERT INTO files (id,ticket_id,name,size,mime,key,by,candidate_id) SELECT ?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',file.id,t.id,file.name,file.size,file.mime,file.key,m.email,file.candidateId||null,t.id,mutation));
+ if(deletedFileId)statements.push(stmt('DELETE FROM files WHERE id=? AND EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',deletedFileId,t.id,mutation));
  const recipients=new Set([t.requesterEmail,t.ownerEmail,...(t.interviews||[]).map((i:any)=>i.interviewer),...(t.status==='Pending Approval'?[t.approvals.find((a:any)=>!a.done)?.email]:[])]);
  if(['Pending HR Review','Approved'].includes(t.status)){const hr=await stmt("SELECT email FROM members WHERE active=1 AND role IN ('hr','admin')").all<any>();for(const person of hr.results)recipients.add(person.email);}
  for(const email of recipients)if(email)statements.push(stmt('INSERT INTO notices (id,email,ticket_id,text,at,read) SELECT ?,?,?,?,?,0 WHERE EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',crypto.randomUUID(),email,t.id,text,at,t.id,mutation));
@@ -110,8 +111,10 @@ export async function handle(req:Request){try{
   await record(t,m,'Draft created');return json({id:t.id});
  }
  const {t,version}=await getTicket(body.id,m);if(body.version!==version)fail('This request changed in another session. Refresh and try again.',409);
- const p=permissions(m,t);let note='';
- if(path==='candidate'){
+ const p=permissions(m,t);let note='',removedFile:any=null;
+ if(path==='delete-candidate-document'){
+  requireHR(m);const candidate=(t.candidates||[]).find((c:any)=>c.id===body.candidateId);const doc=candidate?.documents?.find((d:any)=>d.id===body.documentId);if(!doc)fail('Candidate document not found.',404);removedFile=await stmt('SELECT * FROM files WHERE id=? AND ticket_id=? AND candidate_id=?',body.documentId,t.id,body.candidateId).first<any>();if(!removedFile)fail('Document not found.',404);candidate.documents=candidate.documents.filter((d:any)=>d.id!==body.documentId);note='Candidate document deleted';
+ }else if(path==='candidate'){
   requireHR(m);t.candidates??=[];let c=body.candidateId?t.candidates.find((c:any)=>c.id===body.candidateId):null;if(body.candidateId&&!c)fail('Candidate not found.',404);const d=body.data||{};if(!clean(d.name,100)||!validEmail(d.email)||!['Applied','Shortlisted','Interview','Offer','Hired','Rejected','Withdrawn'].includes(d.status)||!iso(d.appliedAt))fail('Enter candidate name, valid email, application date and status.');const email=clean(d.email,254).toLowerCase();if(t.candidates.some((x:any)=>x.id!==c?.id&&x.email===email))fail('This email already has an application for this position.');if(!c){c={id:crypto.randomUUID(),documents:[],createdAt:new Date().toISOString()};t.candidates.push(c);}Object.assign(c,{name:clean(d.name,100),email,phone:clean(d.phone,60),source:clean(d.source,100),appliedAt:d.appliedAt,status:d.status,notes:clean(d.notes,4000),updatedAt:new Date().toISOString()});note='Candidate record saved';
  }else if(path==='edit'){
   if(!p.edit)fail('Only the requester can edit drafts or clarification responses.',403);const d=payload(body.data);d.positionGroup=d.positionGroup||t.positionGroup;d.location=d.location||t.location;if(!positionTeams.includes(d.positionGroup))fail('Choose a valid position group / team.');if(!['COE','HQ'].includes(d.location))fail('Location must be HQ or COE.');if(d.location!==t.location)fail('Location is fixed after the position ID is allocated.');checkInput(d,!!body.draft);Object.assign(t,d);
@@ -156,5 +159,5 @@ export async function handle(req:Request){try{
   if(next==='Clarification Required'){t.owner=t.requester;t.ownerEmail=t.requesterEmail;}
   note='Status changed to '+next+(reason?': '+reason:'');
  }else fail('Unknown operation.',404);
- await record(t,m,note,version);return json({ok:true,id:t.id});
+ await record(t,m,note,version,undefined,removedFile?.id);if(removedFile)await env.BUCKET!.delete(removedFile.key);return json({ok:true,id:t.id});
  }catch(e:any){return json({error:e.message||'The operation could not be completed.'},e.status||400);}}

@@ -34,3 +34,5 @@ Ubuntu stores candidate profiles/interviews in the existing SQLite records, staf
 `/index.html?demo=1` includes a fictional candidate and sample interview. Demo changes stay in browser storage and do not create staff accounts or write live candidate data.
 
 No hiring-platform sync, public application portal, AI résumé scoring or email delivery is added by this change. Document malware scanning and automated retention remain outside the current implementation.
+
+HR/admin can delete incorrectly uploaded candidate documents from the candidate profile. This removes the profile entry, file metadata and private stored object, and records a deletion event. Interviewers cannot delete documents. Upload the corrected document afterwards.
