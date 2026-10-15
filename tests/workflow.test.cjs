@@ -54,3 +54,15 @@ candidateForm(sample.id);assert.ok(document.querySelector('#dialog').innerHTML.i
 interviewDialog(sample.id,sample.candidates[0].id);assert.ok(document.querySelector('#dialog').innerHTML.includes('candidateId'));
 console.log('PASS: candidate directory, profile, private-document controls and candidate-linked interview form render');
 `,context);
+
+context.crypto={getRandomValues:require('node:crypto').webcrypto.getRandomValues.bind(require('node:crypto').webcrypto)};
+context.Uint8Array=Uint8Array;
+context.FileReader=class{readAsDataURL(){this.result='data:application/pdf;base64,JVBERi0x';this.onload();}};
+(async()=>{await vm.runInContext(`(async()=>{
+assert.equal(typeof crypto.randomUUID,'undefined');
+const ids=new Set(Array.from({length:50},()=>demoRecordId()));assert.equal(ids.size,50);assert.ok([...ids].every(id=>/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id)));
+const t=tickets.find(t=>t.candidates?.length),c=t.candidates[0],before=c.documents.length;
+await uploadCandidateDocument({preventDefault(){},target:{file:{files:[{name:'sample.pdf',size:100}]},kind:{value:'Resume'}}},t.id,c.id);
+assert.equal(c.documents.length,before+1);assert.ok(c.documents.at(-1).url.startsWith('data:application/pdf'));assert.equal(busy,false);
+console.log('PASS: demo résumé upload works without crypto.randomUUID on HTTP LAN browsers');
+})()`,context);})().catch(e=>{console.error(e);process.exitCode=1;});
