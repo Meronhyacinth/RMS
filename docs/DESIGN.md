@@ -45,3 +45,5 @@ The rejected rc initials have been replaced by the original C-and-forward-arrow 
 ## Approved Recruit Centinels logo
 
 The user supplied the approved blue C/person and Recruit centinels artwork. The PNG is preserved unchanged and displayed on a white backing for contrast on navy surfaces. A compact native SVG version of its C/person symbol serves the collapsed sidebar and favicon. The visible product name follows the supplied artwork: Recruit Centinels.
+
+The later uploaded Blue Recruit Centinels Logo(1).png replaces the previous opaque PNG unchanged. Transparency is preserved; light brand surfaces retain contrast for the navy lettering. Cache version transparent-8 ensures existing browsers fetch the replacement.
