@@ -78,3 +78,6 @@ const hrT=tickets.find(t=>t.candidates?.length);closePositionDialog(hrT.id);asse
 assert.ok(dashboard().includes('Withdrawn'));assert.equal(terminal.includes('Filled'),false);
 console.log('PASS: salary bound alignment, HR HOD fields, HR settings/templates, manual-closure dialog and withdrawal bar');
 `,context);
+
+vm.runInContext(`const offerTicket=tickets.find(t=>t.status==='Offer Pending');advanceDialog(offerTicket.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('Candidate withdrawn'));assert.ok(document.querySelector('#dialog').innerHTML.includes('Hold review date'));assert.ok(document.querySelector('#dialog').innerHTML.includes('On Hold'));`,context);
+console.log('PASS: demo offer update includes candidate withdrawal and hold review controls');

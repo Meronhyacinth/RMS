@@ -82,6 +82,17 @@ const betaKey=sqlite.prepare('SELECT key FROM files WHERE id=?').get(betaFile).k
  await change('offer',id,{candidate:'CAND-01',salary:5500,joiningDate:'2026-12-01',response:'Sent'});
  await change('transition',id,{status:'Offer Pending',reason:'Offer sent'});t=await ticket(id);
  assert.equal((await call('transition',{id,version:t.version,status:'Filled',reason:'Premature',filledCount:1})).status,400);
+ await change('transition',id,{status:'On Hold',reason:'Await candidate decision',review:'2026-12-01'});
+ assert.equal((await ticket(id)).previousStatus,'Offer Pending');assert.equal((await ticket(id)).offer.response,'Sent');
+ await change('transition',id,{status:'Resume',reason:'Decision received'});
+ t=await ticket(id);assert.equal((await call('transition',{id,version:t.version,status:'Candidate withdrawn',candidateId:beta.id})).status,400);
+ const beforeWithdrawalQueue=t.emailQueue.length;
+ await change('transition',id,{status:'Candidate withdrawn',candidateId:beta.id,reason:'Candidate accepted another role'});
+ t=await ticket(id);assert.equal(t.status,'Sourcing');assert.equal(t.closedAt,undefined);assert.equal(t.offer,null);assert.equal(t.candidates.find(c=>c.id===beta.id).status,'Withdrawn');assert.equal(t.offerHistory.at(-1).response,'Withdrawn');assert.equal(t.emailQueue.length,beforeWithdrawalQueue);
+ for(const status of ['Screening','Interview','Feedback Pending','Offer Preparation'])await change('transition',id,{status,reason:'Continuing recruitment'});
+ await change('offer',id,{candidate:'CAND-01',salary:5500,joiningDate:'2026-12-01',response:'Sent'});
+ await change('transition',id,{status:'Offer Pending',reason:'Next offer sent'});
+ console.log('PASS: offer hold/resume preserves offer; candidate withdrawal retains history and restarts sourcing without closure or email');
  await change('offer',id,{candidate:'CAND-01',salary:5500,joiningDate:'2026-12-01',response:'Accepted'});
  await change('transition',id,{status:'On Hold',reason:'Joining confirmation',review:'2026-12-01'});
  await change('transition',id,{status:'Resume',reason:'Confirmed'});assert.equal((await ticket(id)).status,'Offer Pending');

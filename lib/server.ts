@@ -146,6 +146,19 @@ export async function handle(req:Request){try{
   if(target==='Reopen'){if(!p.reopen)fail('Only final outcomes can be reopened.');next='Pending HR Review';t.approvals=[];delete t.outcome;delete t.closedAt;delete t.filledAt;delete t.approvedAt;delete t.authorisedAt;delete t.authorisedBy;t.filledCount=0;t.offer=null;t.interviews=(t.interviews||[]).map((i:any)=>({...i,archived:true}));}
   else if(target==='Resume'){if(t.status!=='On Hold')fail('Only held requests can be resumed.');next=t.previousStatus;}
   else if(target==='On Hold'){if(!p.hold||t.status==='On Hold'||!iso(body.review)||body.review<new Date().toISOString().slice(0,10))fail('Enter a current or future hold review date.');t.previousStatus=t.status;t.holdReason=reason;}
+  else if(target==='Candidate withdrawn'){
+   if(!p.recruit||!['Offer Preparation','Offer Pending'].includes(t.status))fail('Candidate withdrawal is available during the offer stages.',403);
+   if(!reason)fail('Record the withdrawal reason.');
+   const candidate=(t.candidates||[]).find((c:any)=>c.id===body.candidateId);
+   if(body.candidateId&&!candidate)fail('Candidate not found.',404);
+   if(!candidate&&(t.candidates||[]).length)fail('Select the candidate who withdrew.');
+   if(!candidate&&!clean(t.offer?.candidate))fail('Record an offer or candidate before recording withdrawal.');
+   if(candidate&&['Hired','Rejected','Withdrawn'].includes(candidate.status))fail('Select an active candidate.');
+   const at=new Date().toISOString();
+   if(candidate){candidate.status='Withdrawn';candidate.withdrawalReason=reason;candidate.withdrawnAt=at;}
+   t.offerHistory??=[];t.offerHistory.push({...t.offer,candidateId:candidate?.id||null,candidate:candidate?.name||t.offer?.candidate,response:'Withdrawn',reason,updatedAt:at});
+   t.offer=null;next='Sourcing';
+  }
   else if(target==='Sourcing'&&t.status==='Offer Pending'&&t.offer?.response==='Declined'){if(!reason)fail('Record why sourcing is restarting.');t.offer=null;}
   else if(!['Cancelled','Rejected'].includes(target)&&!allowedNext(t,next))fail('This transition is not allowed from the current stage.');
   if(next==='Pending Approval'){
