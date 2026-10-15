@@ -15,10 +15,10 @@ async function member(req:Request){
  const passwordMode=passwordLoginEnabled();const u=passwordMode?await sessionUser(req):await getChatGPTUser();if(!u)fail('Sign in to RMS to use this workspace.',401);
  const email=u!.email.toLowerCase();
  // Only the verified Site owner can bootstrap administration; first visitor is never an admin.
- if(email===OWNER_EMAIL)await stmt('INSERT OR IGNORE INTO members (email,user_id,name,role,bu,active) VALUES (?,?,?,?,?,1)',email,u!.userId,u!.displayName,'admin','').run();
+ if(email===OWNER_EMAIL)await stmt('INSERT OR IGNORE INTO members (email,user_id,name,role,bu,active) VALUES (?,?,?,?,?,1)',email,u!.userId,u!.displayName,'boss','').run();
  const m=await stmt('SELECT * FROM members WHERE email=? AND active=1',email).first<Member>();
  if(passwordMode&&(u as any).authVersion!==undefined){const login=await stmt('SELECT version FROM staff_logins WHERE email=?',email).first<any>();if(!login||login.version!==(u as any).authVersion)fail('Your password changed. Please sign in again.',401);}
- if(!m)fail('Your account has not been added to RMS. Ask the workspace administrator for access.',403);
+ if(!m||!['team_lead','hr','boss'].includes(m.role))fail('Your account has not been added to RMS. Ask the workspace administrator for access.',403);
  if(!passwordMode&&m!.user_id&&m!.user_id!==u!.userId)fail('Account identity does not match membership.',403);
  if(!m!.user_id)await stmt('UPDATE members SET user_id=? WHERE email=? AND user_id IS NULL',u!.userId,email).run();
  return {...m!,user_id:u!.userId};
@@ -36,13 +36,12 @@ async function record(t:Ticket,m:Member,text:string,version?:number,file?:any,de
  if(file)statements.push(stmt('INSERT INTO files (id,ticket_id,name,size,mime,key,by,candidate_id) SELECT ?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',file.id,t.id,file.name,file.size,file.mime,file.key,m.email,file.candidateId||null,t.id,mutation));
  if(deletedFileId)statements.push(stmt('DELETE FROM files WHERE id=? AND EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',deletedFileId,t.id,mutation));
  const recipients=new Set([t.requesterEmail,t.ownerEmail,...(t.interviews||[]).map((i:any)=>i.interviewer),...(t.status==='Pending Approval'?[t.approvals.find((a:any)=>!a.done)?.email]:[])]);
- if(['Pending HR Review','Pending Approval','Approved'].includes(t.status)||text.startsWith('Interview scheduling requested')||text.startsWith('Candidate rejected')||(t.priority==='High'&&!terminal.includes(t.status)&&t.status!=='Draft')){const hr=await stmt("SELECT email FROM members WHERE active=1 AND role IN ('hr','admin')").all<any>();for(const person of hr.results)recipients.add(person.email);}
+ if(['Pending HR Review','Pending Approval','Approved'].includes(t.status)||text.startsWith('Interview scheduling requested')||text.startsWith('Candidate rejected')||(t.priority==='High'&&!terminal.includes(t.status)&&t.status!=='Draft')){const hr=await stmt("SELECT email FROM members WHERE active=1 AND role IN ('hr','boss')").all<any>();for(const person of hr.results)recipients.add(person.email);}
  for(const email of recipients)if(email)statements.push(stmt('INSERT INTO notices (id,email,ticket_id,text,at,read) SELECT ?,?,?,?,?,0 WHERE EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',crypto.randomUUID(),email,t.id,(t.priority==='High'?'HIGH PRIORITY · ':'')+text,at,t.id,mutation));
  const r=await db().batch(statements);if(!r[0].meta.changes)fail('This request changed in another session. Refresh and try again.',409);
 }
 async function getTicket(id:string,m:Member){const r=await stmt('SELECT * FROM tickets WHERE id=? OR id=(SELECT new_id FROM ticket_id_aliases WHERE old_id=?)',id,id).first<any>();if(!r)fail('Request not found.',404);const t=JSON.parse(r.data);if(!canView(m,t))fail('You do not have access to this request.',403);return {t,version:r.version};}
 const requireHR=(m:Member)=>{if(!isHR(m))fail('Only HR can perform this action.',403)};
-const requireAdmin=(m:Member)=>{if(m.role!=='admin')fail('Only the administrator can perform this action.',403)};
 
 export async function handle(req:Request){try{
  const u=new URL(req.url),path=u.pathname.replace(/^\/api\/rms\/?/,'');
@@ -65,7 +64,7 @@ export async function handle(req:Request){try{
  if(req.method==='GET'&&path==='workspace'){
   const rows=await stmt('SELECT data,version FROM tickets ORDER BY id DESC').all<any>();
   const ts=rows.results.map(r=>({...JSON.parse(r.data),version:r.version})).filter(t=>canView(m,t)).map(t=>safeTicket(t,m));
-  const people=await stmt(m.role==='admin'?'SELECT email,name,role,bu,active FROM members ORDER BY name':'SELECT email,name,role,bu,active FROM members WHERE active=1 ORDER BY name').all();
+  const people=await stmt(isHR(m)?'SELECT email,name,role,bu,active FROM members ORDER BY name':'SELECT email,name,role,bu,active FROM members WHERE active=1 ORDER BY name').all();
   const notices=await stmt('SELECT * FROM notices WHERE email=? ORDER BY at DESC LIMIT 150',m.email).all();
   return json({member:m,settings:s,tickets:ts,members:people.results.map((person:any)=>({...person,isOwner:person.email===OWNER_EMAIL})),notices:notices.results.filter((n:any)=>ts.some(t=>t.id===n.ticket_id))});
  }
@@ -86,11 +85,11 @@ export async function handle(req:Request){try{
  }
  const body=await req.json() as any;
  if(path==='staff-password'){
-  requireAdmin(m);const email=clean(body.email).toLowerCase();if(email===OWNER_EMAIL)fail('The bootstrap admin password is managed in server settings.');if(!await activeMember(email))fail('Select an active staff member.');if(typeof body.password!=='string'||body.password.length<12||body.password.length>256)fail('Use a password of 12–256 characters.');const hash=await hashPassword(body.password);await stmt('INSERT INTO staff_logins (email,password_hash,version) VALUES (?,?,1) ON CONFLICT(email) DO UPDATE SET password_hash=excluded.password_hash,version=staff_logins.version+1',email,hash).run();await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Staff password reset: '+email).run();return json({ok:true});
+  requireHR(m);const email=clean(body.email).toLowerCase();const target=await activeMember(email);if(m.role==='hr'&&target?.role!=='team_lead')fail('HR can set passwords for team leads only.',403);if(email===OWNER_EMAIL)fail('The bootstrap admin password is managed in server settings.');if(!await activeMember(email))fail('Select an active staff member.');if(typeof body.password!=='string'||body.password.length<12||body.password.length>256)fail('Use a password of 12–256 characters.');const hash=await hashPassword(body.password);await stmt('INSERT INTO staff_logins (email,password_hash,version) VALUES (?,?,1) ON CONFLICT(email) DO UPDATE SET password_hash=excluded.password_hash,version=staff_logins.version+1',email,hash).run();await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Staff password reset: '+email).run();return json({ok:true});
  }
  if(path==='members'){
-  requireAdmin(m);const email=clean(body.email).toLowerCase();if(!validEmail(email)||!['requester','approver','hr','admin','interviewer'].includes(body.role)||!clean(body.name))fail('Enter a name, email and valid role.');
-  if(email===OWNER_EMAIL&&(body.role!=='admin'||body.active===false))fail('The Site owner must remain an active administrator.');
+  requireHR(m);const email=clean(body.email).toLowerCase();const existing=await stmt('SELECT role FROM members WHERE email=?',email).first<any>();if(m.role==='hr'&&(body.role!=='team_lead'||(existing&&existing.role!=='team_lead')))fail('HR can add or remove team leads only.',403);if(!validEmail(email)||!['team_lead','hr','boss'].includes(body.role)||!clean(body.name))fail('Enter a name, email and valid role.');
+  if(email===OWNER_EMAIL&&(body.role!=='boss'||body.active===false))fail('The Site owner must remain an active boss.');
   await stmt('INSERT INTO members (email,name,role,bu,active) VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name,role=excluded.role,bu=excluded.bu,active=excluded.active',email,clean(body.name,100),body.role,clean(body.bu,100),body.active===false?0:1).run();
   await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Membership updated: '+email+' / '+body.role).run();return json({ok:true});
  }

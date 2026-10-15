@@ -43,6 +43,13 @@
       "when": 1792055040974,
       "tag": "0005_productive_wonder_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792057855026,
+      "tag": "0006_three_access_roles",
+      "breakpoints": true
     }
   ]
 }

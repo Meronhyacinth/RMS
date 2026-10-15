@@ -18,3 +18,6 @@ These rules supersede earlier documentation about manager/Finance approvals or a
 - After a candidate is marked Hired, HR can use Close hiring position directly from the candidate list/profile. Closure remains manual.
 
 - SLA timing is removed. New requests have no automatic deadline; HR can set next-action due dates manually. Stage changes retain those dates. Hold review dates remain required. Existing recorded dates are retained.
+
+- Access roles are Team lead, HR and Boss. Legacy admin accounts become Boss; requester, approver and interviewer accounts become Team lead without changing record ownership or passwords.
+- HR and Boss manage team leads, including password setup, removal and restoration. HR cannot modify HR/Boss accounts. Removing access disables login while retaining historical records. Boss manages HR/Boss memberships; the bootstrap owner is protected.

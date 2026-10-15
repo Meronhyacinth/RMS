@@ -6,10 +6,10 @@ Recruitment management based on the supplied nine-slide workflow. The hosted wor
 
 - Standard request form, drafts, conditional replacement fields, duration, urgency, salary validation and required job description attachment for new headcount.
 - Stable ticket IDs; clarification and resubmission retain the same ticket.
-- Headcount/budget review; Hiring Manager, BU Head and conditional Finance routing. Only the current assigned approver can decide. HR assigns a recruiter and explicitly authorises recruitment.
+- HR headcount/budget review and a single HR approval. HR assigns a recruiter and explicitly authorises recruitment.
 - Sourcing, screening, interview scheduling, interviewer feedback, offer preparation, sent/accepted/declined responses, partial vacancy fulfilment and closure.
 - Owners, next action, due dates, hold/review date, reasoned cancellation/rejection/resume/reopen and retained history.
-- Requester, approver, HR and administrator roles; restricted salary/replacement information and private attachment downloads. Interviewers receive their assigned interview records; offers are HR-only.
+- Team lead, HR and Boss roles. HR and Boss manage team-lead access. Team leads review candidates for their requests, HOD positions or assigned interviews; financial and offer details are restricted to HR/Boss.
 - Persisted in-app activity notifications and an overdue queue with escalation contact. Overdue reminders are calculated when the workspace opens or refreshes.
 - Optional manual next-action dates; stage changes do not generate SLA deadlines.
 - Search/filter, archive, server-recorded audit events, CSV reports, request exports and record JSON exports.

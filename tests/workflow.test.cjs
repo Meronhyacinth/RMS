@@ -88,3 +88,6 @@ console.log('PASS: requestor HOD fields, team-lead interview request, reject act
 
 vm.runInContext(`assert.ok(!settingsPage().includes('HR review days'));assert.ok(!settingsPage().includes('Public holidays'));assert.equal(overdue({status:'Sourcing',due:''}),false);assert.equal(date(''),'Not set');`,context);
 console.log('PASS: SLA fields removed; unset due dates remain optional and are not overdue');
+
+vm.runInContext(`liveMember={role:'hr'};members=[{email:'lead@example.test',name:'Lead',role:'team_lead',active:1},{email:'boss@example.test',name:'Boss',role:'boss',active:1,isOwner:true}];assert.ok(teamPage().includes('Remove access'));assert.ok(!teamPage().includes('<option value="boss">'));assert.equal(canManageMember(members[0]),true);assert.equal(canManageMember(members[1]),false);liveMember={role:'boss'};assert.ok(teamPage().includes('<option value="boss">Boss</option>'));liveMember={role:'team_lead'};assert.ok(!teamPage().includes('onsubmit="saveMember'));assert.equal(roleLabel('team_lead'),'Team lead');`,context);
+console.log('PASS: HR/Boss team access controls, exactly three role choices and team-lead management denial');

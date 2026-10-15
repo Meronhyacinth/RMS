@@ -29,13 +29,13 @@ const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEm
  const teamDraft=await ok('create',{data:{title:'Software Engineer',positionGroup:'Software Team',location:'HQ'}});assert.match(teamDraft.id,/^HQ-\d{3,}$/);let teamTicket=await ticket(teamDraft.id);assert.equal(teamTicket.positionGroup,'Software Team');assert.equal(teamTicket.location,'HQ');
  assert.equal((await call('create',{data:{title:'Engineer',positionGroup:'COE',location:'COE'}})).status,400);
  assert.equal((await call('create',{data:{title:'Engineer',positionGroup:'SDT',location:'Other'}})).status,400);
- for(const [email,name,role] of [['requester@example.com','Requester','requester'],['manager@example.com','Manager','approver'],['bu@example.com','BU head','approver'],['finance@example.com','Finance','approver'],['hr@example.com','Recruiter','hr'],['interviewer@example.com','Interviewer','requester']])await ok('members',{email,name,role});
+ for(const [email,name,role] of [['requester@example.com','Requester','team_lead'],['manager@example.com','Manager','team_lead'],['bu@example.com','BU head','team_lead'],['finance@example.com','Finance','team_lead'],['hr@example.com','Recruiter','hr'],['interviewer@example.com','Interviewer','team_lead']])await ok('members',{email,name,role});
  await ok('settings',{hrSla:2,approvalSla:3,recruitmentSla:5,extraApproval:true,buApprover:'bu@example.com',financeApprover:'finance@example.com',escalationEmail:'hr@example.com',holidays:['2026-10-16'],closureRule:'Offer accepted'});
  const act=email=>identity={userId:email,email,displayName:email};
  const {salaryMin,salaryMax,budget,costCentre,grade,...requestOnly}=data;act('requester@example.com');const {id}=await ok('create',{data:requestOnly});const tDraft=await ticket(id);assert.equal((await call('edit',{id,version:tDraft.version,data:{...requestOnly,manager:''},draft:false})).status,400);await change('edit',id,{data:requestOnly,draft:false});
  let t=await ticket(id);assert.equal(t.due,'');assert.equal((await ok('workspace')).settings.hrSla,undefined);assert.equal(t.status,'Pending HR Review');assert.equal(t.salaryMin,undefined);assert.equal(t.salaryMax,undefined);assert.equal(t.budget,undefined);assert.equal(t.costCentre,undefined);assert.equal(t.financialsRestricted,true);assert.equal(JSON.parse(sqlite.prepare('SELECT data FROM tickets WHERE id=?').get(id).data).salaryMin,null);
  assert.equal((await call('transition',{id,version:t.version,status:'Sourcing'})).status,403);
- assert.equal((await call('members',{email:'test@example.com',name:'Test',role:'admin'})).status,403);
+ assert.equal((await call('members',{email:'test@example.com',name:'Test',role:'boss'})).status,403);
  act('interviewer@example.com');assert.equal((await ok('workspace')).tickets.length,0);assert.equal((await call('comment',{id,version:t.version,text:'Intrusion'})).status,403);
  act('hr@example.com');assert.equal((await call('transition',{id,version:t.version,status:'Pending Approval'})).status,400);
  await change('transition',id,{status:'Clarification Required',reason:'Confirm service requirements'});
@@ -123,6 +123,17 @@ const betaKey=sqlite.prepare('SELECT key FROM files WHERE id=?').get(betaFile).k
  act('interviewer@example.com');const denied=await handle(new Request(BASE+'files/'+(await (async()=>{act('hr@example.com');const tt=await ticket('HQ-901');act('interviewer@example.com');return tt.attachments[0].id;})())));assert.equal(denied.status,403);
  console.log('PASS: requester submission without salary/budget, financial-field tampering ignored, requester confidentiality and HR financial review gate');
  console.log('PASS: server authentication, membership, roles, confidentiality, conditional approval routing, approval order, HR authorisation, screening, interviews, feedback gate, offers, fill/close/reopen, holds, private uploads/downloads, concurrency, audit integrity and manual due dates');
+ act('hr@example.com');const managedLead={email:'managed-lead@example.test',name:'Managed Lead',role:'team_lead',bu:'Engineering',active:true};
+ await ok('members',managedLead);assert.ok((await ok('workspace')).members.some(m=>m.email===managedLead.email));
+ await ok('staff-password',{email:managedLead.email,password:'Managed-Lead-Fixture-123'});
+ assert.equal((await call('members',{...managedLead,role:'boss'})).status,403);
+ assert.equal((await call('members',{email:'owner@example.test',name:'Owner',role:'team_lead',active:false})).status,403);
+ assert.equal((await call('staff-password',{email:'hr@example.com',password:'Unauthorized-12345'})).status,403);
+ const historyCount=sqlite.prepare('SELECT COUNT(*) AS n FROM tickets').get().n;
+ await ok('members',{...managedLead,active:false});act(managedLead.email);assert.equal((await call('workspace')).status,403);
+ act('hr@example.com');assert.ok((await ok('workspace')).members.some(m=>m.email===managedLead.email&&!m.active));await ok('members',managedLead);act(managedLead.email);assert.equal((await ok('workspace')).member.role,'team_lead');assert.equal((await call('members',managedLead)).status,403);assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM tickets').get().n,historyCount);
+ identity={userId:'owner-id',email:'owner@example.test',displayName:'Owner'};assert.equal((await ok('workspace')).member.role,'boss');assert.equal((await call('members',{...managedLead,role:'requester'})).status,400);
+ console.log('PASS: three-role access, HR team-lead creation/password/removal/restoration, role escalation denial and historical record retention');
  const {pbkdf2Sync,randomBytes}=require('node:crypto');
  const salt=randomBytes(16),testPassword='FixturePassword-123';
  testEnv.RMS_ADMIN_PASSWORD_HASH='pbkdf2-sha256$100000$'+salt.toString('base64url')+'$'+pbkdf2Sync(testPassword,salt,100000,32,'sha256').toString('base64url');testEnv.RMS_SESSION_SECRET=randomBytes(48).toString('base64url');
@@ -143,18 +154,18 @@ const betaKey=sqlite.prepare('SELECT key FROM files WHERE id=?').get(betaFile).k
  console.log('PASS: administrator email settings persist and invalid addresses are rejected');
  const staffEmail='lead@example.test',staffPassword='Lead-Fixture-Password-123';
  async function authenticated(path,body,cookie=cookieHeader){return handle(new Request(BASE+path,{method:body===undefined?'GET':'POST',headers:{cookie,Origin:'https://rms.test','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)}));}
- assert.equal((await authenticated('members',{email:staffEmail,name:'Team Lead',role:'interviewer',active:true})).status,200);
+ assert.equal((await authenticated('members',{email:staffEmail,name:'Team Lead',role:'team_lead',active:true})).status,200);
  assert.equal((await authenticated('staff-password',{email:staffEmail,password:'short'})).status,400);
  assert.equal((await authenticated('staff-password',{email:staffEmail,password:staffPassword})).status,200);
  async function staffSignIn(password){return handle(new Request(BASE+'login',{method:'POST',headers:{Origin:'https://rms.test','Content-Type':'application/json'},body:JSON.stringify({username:staffEmail,password})}));}
  const staffLogin=await staffSignIn(staffPassword);assert.equal(staffLogin.status,200);const staffCookie=staffLogin.headers.getSetCookie().find(c=>!c.includes('Max-Age=0')).split(';')[0];
- const staffWorkspace=await authenticated('workspace',undefined,staffCookie);assert.equal(staffWorkspace.status,200);const staffData=await staffWorkspace.json();assert.equal(staffData.member.role,'interviewer');assert.equal(staffData.tickets.length,0);
+ const staffWorkspace=await authenticated('workspace',undefined,staffCookie);assert.equal(staffWorkspace.status,200);const staffData=await staffWorkspace.json();assert.equal(staffData.member.role,'team_lead');assert.equal(staffData.tickets.length,0);
  assert.equal((await authenticated('staff-password',{email:'hr@example.com',password:staffPassword},staffCookie)).status,403);
  assert.equal((await authenticated('staff-password',{email:staffEmail,password:staffPassword+'2'})).status,200);
  assert.equal((await authenticated('workspace',undefined,staffCookie)).status,401,'Reset invalidates old staff sessions');
  assert.equal((await staffSignIn(staffPassword)).status,401);const relogin=await staffSignIn(staffPassword+'2');assert.equal(relogin.status,200);const newCookie=relogin.headers.getSetCookie().find(c=>!c.includes('Max-Age=0')).split(';')[0];
- await authenticated('members',{email:staffEmail,name:'Team Lead',role:'interviewer',active:false});assert.equal((await authenticated('workspace',undefined,newCookie)).status,403);assert.equal((await staffSignIn(staffPassword+'2')).status,401);
- console.log('PASS: individual staff login, hashed password reset, reset-session revocation, admin-only credentials and disabled-account denial');
+ await authenticated('members',{email:staffEmail,name:'Team Lead',role:'team_lead',active:false});assert.equal((await authenticated('workspace',undefined,newCookie)).status,403);assert.equal((await staffSignIn(staffPassword+'2')).status,401);
+ console.log('PASS: individual staff login, hashed password reset, reset-session revocation, HR/Boss-managed team-lead credentials and disabled-account denial');
  
  const logout=await handle(new Request(BASE+'logout',{method:'POST',headers:{Origin:'https://rms.test',cookie:cookieHeader},body:'{}'}));assert.ok(logout.headers.get('set-cookie').includes('Max-Age=0'));
  for(let i=0;i<10;i++){const r=await handle(new Request(BASE+'login',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://rms.test','cf-connecting-ip':'10.0.0.3'},body:JSON.stringify({username:'admin',password:'incorrect'})}));assert.equal(r.status,401);}

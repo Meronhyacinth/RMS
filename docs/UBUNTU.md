@@ -47,7 +47,7 @@ Open `http://192.168.1.50` in your browser, replacing the example IP. Port 80 is
 
 This HTTP configuration is for testing on a trusted network. Use HTTPS before entering real personnel data or exposing the service over the internet. With an HTTPS reverse proxy, set RMS_PUBLIC_ORIGIN to the https URL and RMS_HTTP_DEV_MODE to false; the proxy must preserve cookies and the request Origin header. No proxy is configured by this compose file.
 
-The current standalone login is a single admin account. Separate requester/approver passwords and job-board/email-provider connections are not configured automatically.
+The bootstrap username remains `admin` and has the Boss role. HR and Boss can add team leads under Team access and set individual staff passwords. Job-board/email-provider connections are not configured automatically.
 
 ## Port and connectivity issues
 
@@ -74,4 +74,4 @@ The local runtime applies new SQL migrations at startup and verifies existing mi
 
 ## HR candidates and team-lead interviews
 
-After updating and rebuilding, open **Team access** as admin, add HR/interviewer staff and use **Set password**. Each staff member signs in with their email and password. HR adds candidate applications and private résumés under **Candidates & interviews**, then schedules interviews to grant the selected team lead access. See [Candidate workflow](CANDIDATES.md). The new database migration is additive and runs automatically at startup.
+After updating and rebuilding, open **Team access** as Boss or HR, add team leads and use **Set password** (Boss can also add HR/Boss accounts). Each staff member signs in with their email and password. HR adds candidate applications and private résumés under **Candidates & interviews**, then schedules interviews to grant the selected team lead access. See [Candidate workflow](CANDIDATES.md). The new database migration is additive and runs automatically at startup.
