@@ -1,7 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {getChatGPTUser} from '../app/chatgpt-auth';
 import {passwordLoginEnabled,hashPassword,verifyPassword,sessionCookie,logoutCookie,sessionUser,clearLegacyCookie} from './password-auth';
-import {defaults,isHR,canViewCandidate,canView,permissions,safeTicket,validateInput,dueDate,nextFor,allowedNext,terminal,recruitment, type Ticket,type Member} from './rules';
+import {defaults,positionGroup,isHR,canViewCandidate,canView,permissions,safeTicket,validateInput,dueDate,nextFor,allowedNext,terminal,recruitment, type Ticket,type Member} from './rules';
 
 const OWNER_EMAIL=((env as unknown as {RMS_OWNER_EMAIL?:string}).RMS_OWNER_EMAIL||'').toLowerCase();
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -30,7 +30,7 @@ async function approvalRoute(t:Ticket,s:any){
  for(const a of rows)if(!a.email||!await activeMember(a.email))fail('Configure an active '+a.name+' approver before routing this request.');
  return rows.map(a=>({...a,done:false}));
 }
-function payload(data:Ticket){const keys=['title','bu','manager','managerEmail','team','grade','vacancies','employment','duration','location','justification','target','priority','urgency','requirements','salaryMin','salaryMax','budget','costCentre','replacement','vacancyDate','type'];const o:Ticket={};for(const k of keys)o[k]=typeof data[k]==='string'?clean(data[k],['requirements','justification'].includes(k)?6000:200):data[k];o.managerEmail=clean(o.managerEmail).toLowerCase();o.vacancies=+o.vacancies;o.salaryMin=+o.salaryMin;o.salaryMax=+o.salaryMax;return o;}
+function payload(data:Ticket){const keys=['positionGroup','title','bu','manager','managerEmail','team','grade','vacancies','employment','duration','location','justification','target','priority','urgency','requirements','salaryMin','salaryMax','budget','costCentre','replacement','vacancyDate','type'];const o:Ticket={};for(const k of keys)o[k]=typeof data[k]==='string'?clean(data[k],['requirements','justification'].includes(k)?6000:200):data[k];o.managerEmail=clean(o.managerEmail).toLowerCase();o.vacancies=+o.vacancies;o.salaryMin=+o.salaryMin;o.salaryMax=+o.salaryMax;return o;}
 function checkInput(t:Ticket,draft:boolean){validateInput(t,draft);if(draft)return;if(!validEmail(t.managerEmail))fail('Enter a valid hiring manager email.');if(!iso(t.target))fail('Choose a valid joining date.');if(t.type==='Replacement'&&!iso(t.vacancyDate))fail('Choose a valid vacancy date.');if(!['Permanent','Contract','Temporary','Internship'].includes(t.employment))fail('Choose an employment type.');}
 async function record(t:Ticket,m:Member,text:string,version?:number,file?:any){
  const at=new Date().toISOString(),mutation=crypto.randomUUID();t.updatedAt=at;t.history??=[];t.history.push({at,actor:m.name,text});
@@ -42,7 +42,7 @@ async function record(t:Ticket,m:Member,text:string,version?:number,file?:any){
  for(const email of recipients)if(email)statements.push(stmt('INSERT INTO notices (id,email,ticket_id,text,at,read) SELECT ?,?,?,?,?,0 WHERE EXISTS (SELECT 1 FROM tickets WHERE id=? AND mutation=?)',crypto.randomUUID(),email,t.id,text,at,t.id,mutation));
  const r=await db().batch(statements);if(!r[0].meta.changes)fail('This request changed in another session. Refresh and try again.',409);
 }
-async function getTicket(id:string,m:Member){const r=await stmt('SELECT * FROM tickets WHERE id=?',id).first<any>();if(!r)fail('Request not found.',404);const t=JSON.parse(r.data);if(!canView(m,t))fail('You do not have access to this request.',403);return {t,version:r.version};}
+async function getTicket(id:string,m:Member){const r=await stmt('SELECT * FROM tickets WHERE id=? OR id=(SELECT new_id FROM ticket_id_aliases WHERE old_id=?)',id,id).first<any>();if(!r)fail('Request not found.',404);const t=JSON.parse(r.data);if(!canView(m,t))fail('You do not have access to this request.',403);return {t,version:r.version};}
 const requireHR=(m:Member)=>{if(!isHR(m))fail('Only HR can perform this action.',403)};
 const requireAdmin=(m:Member)=>{if(m.role!=='admin')fail('Only the administrator can perform this action.',403)};
 
@@ -106,7 +106,7 @@ export async function handle(req:Request){try{
  }
  if(path==='read-notices'){await stmt('UPDATE notices SET read=1 WHERE email=?',m.email).run();return json({ok:true});}
  if(path==='create'){
-  const t=payload(body.data);checkInput(t,true);Object.assign(t,{id:'RMS-'+new Date().getFullYear()+'-'+crypto.randomUUID().slice(0,12).toUpperCase(),status:'Draft',requester:m.name,requesterEmail:m.email,owner:m.name,ownerEmail:m.email,created:new Date().toISOString().slice(0,10),next:nextFor('Draft'),due:dueDate(s.hrSla,s.holidays),attachments:[],approvals:[],comments:[],history:[],interviews:[],candidates:[],filledCount:0});
+  const t=payload(body.data);checkInput(t,true);if(t.positionGroup&&!['COE','HQ'].includes(t.positionGroup))fail('Choose COE or HQ.');const prefix=t.positionGroup||positionGroup(t.title,t.bu);const seq=await stmt('INSERT INTO ticket_counters (prefix,value) VALUES (?,1) ON CONFLICT(prefix) DO UPDATE SET value=ticket_counters.value+1 RETURNING value',prefix).first<any>();Object.assign(t,{id:prefix+'-'+String(seq.value).padStart(3,'0'),positionGroup:prefix,status:'Draft',requester:m.name,requesterEmail:m.email,owner:m.name,ownerEmail:m.email,created:new Date().toISOString().slice(0,10),next:nextFor('Draft'),due:dueDate(s.hrSla,s.holidays),attachments:[],approvals:[],comments:[],history:[],interviews:[],candidates:[],filledCount:0});
   await record(t,m,'Draft created');return json({id:t.id});
  }
  const {t,version}=await getTicket(body.id,m);if(body.version!==version)fail('This request changed in another session. Refresh and try again.',409);
@@ -114,7 +114,7 @@ export async function handle(req:Request){try{
  if(path==='candidate'){
   requireHR(m);t.candidates??=[];let c=body.candidateId?t.candidates.find((c:any)=>c.id===body.candidateId):null;if(body.candidateId&&!c)fail('Candidate not found.',404);const d=body.data||{};if(!clean(d.name,100)||!validEmail(d.email)||!['Applied','Shortlisted','Interview','Offer','Hired','Rejected','Withdrawn'].includes(d.status)||!iso(d.appliedAt))fail('Enter candidate name, valid email, application date and status.');const email=clean(d.email,254).toLowerCase();if(t.candidates.some((x:any)=>x.id!==c?.id&&x.email===email))fail('This email already has an application for this position.');if(!c){c={id:crypto.randomUUID(),documents:[],createdAt:new Date().toISOString()};t.candidates.push(c);}Object.assign(c,{name:clean(d.name,100),email,phone:clean(d.phone,60),source:clean(d.source,100),appliedAt:d.appliedAt,status:d.status,notes:clean(d.notes,4000),updatedAt:new Date().toISOString()});note='Candidate record saved';
  }else if(path==='edit'){
-  if(!p.edit)fail('Only the requester can edit drafts or clarification responses.',403);const d=payload(body.data);checkInput(d,!!body.draft);Object.assign(t,d);
+  if(!p.edit)fail('Only the requester can edit drafts or clarification responses.',403);const d=payload(body.data);checkInput(d,!!body.draft);if(d.positionGroup&&d.positionGroup!==t.positionGroup)fail('The position group is fixed once its ID is allocated.');d.positionGroup=t.positionGroup;Object.assign(t,d);
   if(!body.draft){if(t.type==='New headcount'&&!t.attachments.length)fail('Attach a job description for a new role.');t.status='Pending HR Review';t.submittedAt??=new Date().toISOString();t.owner='HR review queue';t.ownerEmail='';t.next=nextFor(t.status);t.due=dueDate(s.hrSla,s.holidays);t.approvals=[];}
   note=body.draft?'Draft saved':'Request submitted for HR review';
  }else if(path==='approve'){
