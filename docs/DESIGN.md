@@ -41,3 +41,7 @@ The product name is Recruit Centinel. Its lowercase, tightly spaced bold wordmar
 ## Restored product symbol
 
 The rejected rc initials have been replaced by the original C-and-forward-arrow symbol. The full Recruit Centinel wordmark now includes that symbol, with navy/white variants and a matching favicon.
+
+## Approved Recruit Centinels logo
+
+The user supplied the approved blue C/person and Recruit centinels artwork. The PNG is preserved unchanged and displayed on a white backing for contrast on navy surfaces. A compact native SVG version of its C/person symbol serves the collapsed sidebar and favicon. The visible product name follows the supplied artwork: Recruit Centinels.
