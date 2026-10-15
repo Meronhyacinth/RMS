@@ -71,3 +71,7 @@ sudo docker compose up -d --build
 Requests, audit records and attachments persist in the named `rms-data` Docker volume. Ordinary container recreation preserves it. `docker compose down -v` deletes the database and attachments; do not use it to update.
 
 The local runtime applies new SQL migrations at startup and verifies existing migration hashes. It refuses edited migrations that were already applied. Keep `.env` and data private and backed up. For a consistent cold backup, stop RMS, back up its named volume and `.env`, then restart it.
+
+## HR candidates and team-lead interviews
+
+After updating and rebuilding, open **Team access** as admin, add HR/interviewer staff and use **Set password**. Each staff member signs in with their email and password. HR adds candidate applications and private résumés under **Candidates & interviews**, then schedules interviews to grant the selected team lead access. See [Candidate workflow](CANDIDATES.md). The new database migration is additive and runs automatically at startup.

@@ -47,9 +47,29 @@ const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEm
  assert.equal((await call('comment',{id,version:stale.version,text:'Stale write'})).status,409);assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM events').get().n,before);
  for(const status of ['Sourcing','Screening','Interview'])await change('transition',id,{status,reason:'Milestone recorded'});
  await change('interview',id,{candidate:'CAND-01',interviewer:'interviewer@example.com',at:'2026-10-20T10:00:00+08:00'});
+ // Candidate documents are scoped to the assigned candidate, not merely the position.
+ await change('candidate',id,{data:{name:'Candidate Alpha',email:'alpha@example.test',phone:'0123',source:'JobStreet',appliedAt:'2026-10-15',status:'Shortlisted',notes:'HR only assessment'}});
+ await change('candidate',id,{data:{name:'Candidate Beta',email:'beta@example.test',source:'Email',appliedAt:'2026-10-15',status:'Applied',notes:'Confidential'}});
+ let candidateTicket=await ticket(id),alpha=candidateTicket.candidates[0],beta=candidateTicket.candidates[1];
+ assert.equal((await call('candidate',{id,version:candidateTicket.version,data:{...alpha,name:'Duplicate',status:'Applied'}})).status,400);
+ async function candidateUpload(candidateId,name,contents){const form=new FormData();form.set('ticketId',id);form.set('candidateId',candidateId);form.set('kind','Resume');form.set('file',new File([contents],name,{type:'application/pdf'}));return handle(new Request(BASE+'upload',{method:'POST',headers:{Origin:'https://rms.test'},body:form}));}
+ assert.equal((await candidateUpload(alpha.id,'alpha.pdf','Alpha private resume')).status,200);
+ assert.equal((await candidateUpload(beta.id,'beta.pdf','Beta private resume')).status,200);
+ candidateTicket=await ticket(id);const alphaFile=candidateTicket.candidates[0].documents[0].id,betaFile=candidateTicket.candidates[1].documents[0].id;
+ await change('interview',id,{candidateId:alpha.id,interviewer:'interviewer@example.com',at:'2026-10-20T11:00:00+08:00'});
+ act('requester@example.com');assert.equal((await ticket(id)).candidates.length,0);assert.equal((await handle(new Request(BASE+'files/'+alphaFile))).status,403);
+ act('interviewer@example.com');candidateTicket=await ticket(id);assert.equal(candidateTicket.candidates.length,1);assert.equal(candidateTicket.candidates[0].id,alpha.id);assert.equal(candidateTicket.candidates[0].notes,undefined);
+ assert.equal((await candidateUpload(alpha.id,'intrusion.pdf','Unwanted')).status,403);
+ assert.equal((await call('candidate',{id,version:candidateTicket.version,candidateId:alpha.id,data:{...alpha,name:'Tampered'}})).status,403);
+ const preview=await handle(new Request(BASE+'files/'+alphaFile+'?view=1'));assert.equal(preview.status,200);assert.equal(preview.headers.get('content-type'),'application/pdf');assert.equal(await preview.text(),'Alpha private resume');
+ assert.equal((await handle(new Request(BASE+'files/'+betaFile))).status,403);
+ const assignedInterview=candidateTicket.interviews.find(i=>i.candidateId===alpha.id);await change('feedback',id,{interviewId:assignedInterview.id,text:'Suitable skills',recommendation:'Proceed'});
+ act('manager@example.com');assert.equal((await ticket(id)).candidates.length,0);assert.equal((await handle(new Request(BASE+'files/'+alphaFile))).status,403);
+ act('hr@example.com');
+ console.log('PASS: candidate creation, duplicate applications, private resume upload, PDF preview, candidate-level interviewer isolation and HR-only profile updates');
  await change('transition',id,{status:'Feedback Pending',reason:'Interview complete'});t=await ticket(id);
  assert.equal((await call('transition',{id,version:t.version,status:'Offer Preparation',reason:'Try skipping feedback'})).status,400);
- act('interviewer@example.com');t=await ticket(id);assert.equal(t.salaryMin,undefined);assert.equal(t.replacement,undefined);assert.equal(t.interviews.length,1);
+ act('interviewer@example.com');t=await ticket(id);assert.equal(t.salaryMin,undefined);assert.equal(t.replacement,undefined);assert.equal(t.interviews.length,2);
  await change('feedback',id,{interviewId:t.interviews[0].id,text:'Technical requirements met',recommendation:'Proceed'});
  act('hr@example.com');await change('transition',id,{status:'Offer Preparation',reason:'Feedback complete'});
  await change('offer',id,{candidate:'CAND-01',salary:5500,joiningDate:'2026-12-01',response:'Sent'});
@@ -59,7 +79,7 @@ const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEm
  await change('transition',id,{status:'On Hold',reason:'Joining confirmation',review:'2026-12-01'});
  await change('transition',id,{status:'Resume',reason:'Confirmed'});assert.equal((await ticket(id)).status,'Offer Pending');
  await change('transition',id,{status:'Filled',reason:'Offer accepted',filledCount:1});await change('transition',id,{status:'Closed'});assert.equal((await ticket(id)).outcome,'Filled');
- await change('transition',id,{status:'Reopen',reason:'New vacancy required'});t=await ticket(id);assert.equal(t.id,id);assert.equal(t.status,'Pending HR Review');assert.equal(t.approvals.length,0);assert.equal(t.filledAt,undefined);assert.equal(t.offer,null);
+ await change('transition',id,{status:'Reopen',reason:'New vacancy required'});t=await ticket(id);assert.equal(t.id,id);assert.equal(t.status,'Pending HR Review');assert.equal(t.approvals.length,0);assert.equal(t.filledAt,undefined);assert.equal(t.offer,null);assert.equal(t.candidates.length,2);assert.ok(t.interviews.every(i=>i.archived),'Reopening preserves prior interviews');
  act('requester@example.com');const newRole={...data,type:'New headcount',budget:'Unbudgeted'};const n=await ok('create',{data:newRole});t=await ticket(n.id);assert.equal((await call('edit',{id:n.id,version:t.version,data:newRole,draft:false})).status,400);
  const upload=new FormData();upload.set('ticketId',n.id);upload.set('file',new File(['Sample JD'],'JD.txt',{type:'text/plain'}));const uploaded=await handle(new Request(BASE+'upload',{method:'POST',headers:{Origin:'https://rms.test'},body:upload}));assert.equal(uploaded.status,200);await change('edit',n.id,{data:newRole,draft:false});
  act('hr@example.com');await change('transition',n.id,{status:'Pending Approval',budgetConfirmed:true});assert.equal((await ticket(n.id)).approvals.length,3);
@@ -87,6 +107,21 @@ const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEm
  const updatedResponse=await handle(new Request(BASE+'workspace',{headers:{cookie:cookieHeader}}));const updated=await updatedResponse.json();assert.equal(updated.settings.systemEmail,'recruitment@example.com');assert.equal(updated.settings.replyTo,'hr@example.com');
  const badEmail=await handle(new Request(BASE+'settings',{method:'POST',headers:{cookie:cookieHeader,Origin:'https://rms.test','Content-Type':'application/json'},body:JSON.stringify({...emailSettings,systemEmail:'bad-email'})}));assert.equal(badEmail.status,400);
  console.log('PASS: administrator email settings persist and invalid addresses are rejected');
+ const staffEmail='lead@example.test',staffPassword='Lead-Fixture-Password-123';
+ async function authenticated(path,body,cookie=cookieHeader){return handle(new Request(BASE+path,{method:body===undefined?'GET':'POST',headers:{cookie,Origin:'https://rms.test','Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)}));}
+ assert.equal((await authenticated('members',{email:staffEmail,name:'Team Lead',role:'interviewer',active:true})).status,200);
+ assert.equal((await authenticated('staff-password',{email:staffEmail,password:'short'})).status,400);
+ assert.equal((await authenticated('staff-password',{email:staffEmail,password:staffPassword})).status,200);
+ async function staffSignIn(password){return handle(new Request(BASE+'login',{method:'POST',headers:{Origin:'https://rms.test','Content-Type':'application/json'},body:JSON.stringify({username:staffEmail,password})}));}
+ const staffLogin=await staffSignIn(staffPassword);assert.equal(staffLogin.status,200);const staffCookie=staffLogin.headers.getSetCookie().find(c=>!c.includes('Max-Age=0')).split(';')[0];
+ const staffWorkspace=await authenticated('workspace',undefined,staffCookie);assert.equal(staffWorkspace.status,200);const staffData=await staffWorkspace.json();assert.equal(staffData.member.role,'interviewer');assert.equal(staffData.tickets.length,0);
+ assert.equal((await authenticated('staff-password',{email:'hr@example.com',password:staffPassword},staffCookie)).status,403);
+ assert.equal((await authenticated('staff-password',{email:staffEmail,password:staffPassword+'2'})).status,200);
+ assert.equal((await authenticated('workspace',undefined,staffCookie)).status,401,'Reset invalidates old staff sessions');
+ assert.equal((await staffSignIn(staffPassword)).status,401);const relogin=await staffSignIn(staffPassword+'2');assert.equal(relogin.status,200);const newCookie=relogin.headers.getSetCookie().find(c=>!c.includes('Max-Age=0')).split(';')[0];
+ await authenticated('members',{email:staffEmail,name:'Team Lead',role:'interviewer',active:false});assert.equal((await authenticated('workspace',undefined,newCookie)).status,403);assert.equal((await staffSignIn(staffPassword+'2')).status,401);
+ console.log('PASS: individual staff login, hashed password reset, reset-session revocation, admin-only credentials and disabled-account denial');
+ 
  const logout=await handle(new Request(BASE+'logout',{method:'POST',headers:{Origin:'https://rms.test',cookie:cookieHeader},body:'{}'}));assert.ok(logout.headers.get('set-cookie').includes('Max-Age=0'));
  for(let i=0;i<10;i++){const r=await handle(new Request(BASE+'login',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://rms.test','cf-connecting-ip':'10.0.0.3'},body:JSON.stringify({username:'admin',password:'incorrect'})}));assert.equal(r.status,401);}
  const locked=await handle(new Request(BASE+'login',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://rms.test','cf-connecting-ip':'10.0.0.3'},body:JSON.stringify({username:'admin',password:testPassword})}));assert.equal(locked.status,429);

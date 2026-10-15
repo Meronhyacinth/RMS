@@ -45,3 +45,12 @@ vm.runInContext(fs.readFileSync(__dirname+'/../public/workspace.js','utf8'),live
 vm.runInContext(`let sent; action=(path,data,id)=>{sent={path,data,id};}; transition('RMS-test','Ready for Recruitment'); assert.equal(sent.path,'transition'); assert.equal(sent.data.status,'Ready for Recruitment'); assert.ok(sent.data.reason.length>0); console.log('PASS: shared UI authorisation sends the required milestone note');`,liveContext);
 
 vm.runInContext(`assert.equal(tickets.length,0,'Unauthenticated shared UI must not load sample records'); let prompted=false; showLogin=()=>{prompted=true}; page='requests'; render(); assert.equal(prompted,true,'Navigation must not bypass sign-in'); console.log('PASS: unauthenticated navigation cannot open the shared workspace');`,liveContext);
+
+vm.runInContext(fs.readFileSync(__dirname+'/../public/candidates.js','utf8'),context);
+vm.runInContext(`
+page='candidates';render();assert.ok(document.querySelector('#main').innerHTML.includes('Jamie Tan'));
+const sample=tickets.find(t=>t.candidates?.length);candidateDetail(sample.id,sample.candidates[0].id);assert.ok(document.querySelector('#dialog').innerHTML.includes('Résumé & application documents'));
+candidateForm(sample.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('Save candidate'));
+interviewDialog(sample.id,sample.candidates[0].id);assert.ok(document.querySelector('#dialog').innerHTML.includes('candidateId'));
+console.log('PASS: candidate directory, profile, private-document controls and candidate-linked interview form render');
+`,context);
