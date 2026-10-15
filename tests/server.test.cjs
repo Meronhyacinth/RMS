@@ -19,7 +19,7 @@ const BASE='https://rms.test/api/rms/';
 async function call(path,data){const response=await handle(new Request(BASE+path,{method:data===undefined?'GET':'POST',headers:{'Content-Type':'application/json','Origin':'https://rms.test'},body:data===undefined?undefined:JSON.stringify(data)}));return {status:response.status,data:await response.json()};}
 async function ok(path,data){const r=await call(path,data);assert.equal(r.status,200,JSON.stringify(r));return r.data;}
 async function ticket(id){return (await ok('workspace')).tickets.find(t=>t.id===id);}
-async function change(path,id,data={}){const t=await ticket(id);return ok(path,{id,version:t.version,...data});}
+async function change(path,id,data={}){if(path==='transition'&&data.status==='Pending Approval'&&data.budgetConfirmed)data={financials:{salaryMin:4000,salaryMax:6000,budget:'Budgeted',costCentre:'HR-CC'},...data};const t=await ticket(id);return ok(path,{id,version:t.version,...data});}
 const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEmail:'manager@example.com',team:'Services',grade:'Engineer',vacancies:1,employment:'Permanent',location:'COE',justification:'Replace departing engineer',target:'2026-12-01',priority:'Normal',requirements:'Service experience',salaryMin:4000,salaryMax:6000,budget:'Budgeted',costCentre:'CC-01',replacement:'EMP-01',vacancyDate:'2026-10-14',type:'Replacement'};
 (async()=>{
  identity=null;assert.equal((await call('workspace')).status,401);
@@ -32,17 +32,17 @@ const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEm
  for(const [email,name,role] of [['requester@example.com','Requester','requester'],['manager@example.com','Manager','approver'],['bu@example.com','BU head','approver'],['finance@example.com','Finance','approver'],['hr@example.com','Recruiter','hr'],['interviewer@example.com','Interviewer','requester']])await ok('members',{email,name,role});
  await ok('settings',{hrSla:2,approvalSla:3,recruitmentSla:5,extraApproval:true,buApprover:'bu@example.com',financeApprover:'finance@example.com',escalationEmail:'hr@example.com',holidays:['2026-10-16'],closureRule:'Offer accepted'});
  const act=email=>identity={userId:email,email,displayName:email};
- act('requester@example.com');const {id}=await ok('create',{data});await change('edit',id,{data,draft:false});
- let t=await ticket(id);assert.equal(t.status,'Pending HR Review');
+ const {salaryMin,salaryMax,budget,costCentre,...requestOnly}=data;act('requester@example.com');const {id}=await ok('create',{data:requestOnly});await change('edit',id,{data:requestOnly,draft:false});
+ let t=await ticket(id);assert.equal(t.status,'Pending HR Review');assert.equal(t.salaryMin,undefined);assert.equal(t.salaryMax,undefined);assert.equal(t.budget,undefined);assert.equal(t.costCentre,undefined);assert.equal(t.financialsRestricted,true);assert.equal(JSON.parse(sqlite.prepare('SELECT data FROM tickets WHERE id=?').get(id).data).salaryMin,null);
  assert.equal((await call('transition',{id,version:t.version,status:'Sourcing'})).status,403);
  assert.equal((await call('members',{email:'test@example.com',name:'Test',role:'admin'})).status,403);
  act('interviewer@example.com');assert.equal((await ok('workspace')).tickets.length,0);assert.equal((await call('comment',{id,version:t.version,text:'Intrusion'})).status,403);
  act('hr@example.com');assert.equal((await call('transition',{id,version:t.version,status:'Pending Approval'})).status,400);
  await change('transition',id,{status:'Clarification Required',reason:'Confirm service requirements'});
- act('requester@example.com');await change('edit',id,{data,draft:false});assert.equal((await ticket(id)).id,id);
- act('hr@example.com');await change('transition',id,{status:'Pending Approval',budgetConfirmed:true});t=await ticket(id);assert.equal(t.approvals.length,1);
+ act('requester@example.com');await change('edit',id,{data:{...data,salaryMin:1,salaryMax:1,budget:'Budgeted',costCentre:'Untrusted'},draft:false});assert.equal((await ticket(id)).id,id);assert.notEqual(JSON.parse(sqlite.prepare('SELECT data FROM tickets WHERE id=?').get(id).data).costCentre,'Untrusted');
+ act('hr@example.com');t=await ticket(id);assert.equal((await call('transition',{id,version:t.version,status:'Pending Approval',budgetConfirmed:true})).status,400);assert.equal((await call('transition',{id,version:t.version,status:'Pending Approval',budgetConfirmed:true,financials:{salaryMin:6000,salaryMax:4000,budget:'Budgeted',costCentre:'CC'}})).status,400);await change('transition',id,{status:'Pending Approval',budgetConfirmed:true});t=await ticket(id);assert.equal(t.approvals.length,1);
  assert.equal((await call('approve',{id,version:t.version})).status,403);
- act('manager@example.com');await change('approve',id);assert.equal((await ticket(id)).status,'Approved');
+ act('manager@example.com');assert.equal((await ticket(id)).salaryMin,4000);await change('approve',id);assert.equal((await ticket(id)).status,'Approved');
  act('hr@example.com');t=await ticket(id);assert.equal((await call('transition',{id,version:t.version,status:'Ready for Recruitment'})).status,400);
  await change('assign',id,{ownerEmail:'hr@example.com',due:'2026-10-20',next:'Launch sourcing'});
  await change('transition',id,{status:'Ready for Recruitment',reason:'Authorised'});
@@ -90,12 +90,13 @@ const betaKey=sqlite.prepare('SELECT key FROM files WHERE id=?').get(betaFile).k
  await change('transition',id,{status:'Reopen',reason:'New vacancy required'});t=await ticket(id);assert.equal(t.id,id);assert.equal(t.status,'Pending HR Review');assert.equal(t.approvals.length,0);assert.equal(t.filledAt,undefined);assert.equal(t.offer,null);assert.equal(t.candidates.length,2);assert.ok(t.interviews.every(i=>i.archived),'Reopening preserves prior interviews');
  act('requester@example.com');const newRole={...data,type:'New headcount',budget:'Unbudgeted'};const n=await ok('create',{data:newRole});t=await ticket(n.id);assert.equal((await call('edit',{id:n.id,version:t.version,data:newRole,draft:false})).status,400);
  const upload=new FormData();upload.set('ticketId',n.id);upload.set('file',new File(['Sample JD'],'JD.txt',{type:'text/plain'}));const uploaded=await handle(new Request(BASE+'upload',{method:'POST',headers:{Origin:'https://rms.test'},body:upload}));assert.equal(uploaded.status,200);await change('edit',n.id,{data:newRole,draft:false});
- act('hr@example.com');await change('transition',n.id,{status:'Pending Approval',budgetConfirmed:true});assert.equal((await ticket(n.id)).approvals.length,3);
+ act('hr@example.com');await change('transition',n.id,{status:'Pending Approval',budgetConfirmed:true,financials:{salaryMin:4000,salaryMax:6000,budget:'Unbudgeted',costCentre:'HR-CC'}});assert.equal((await ticket(n.id)).approvals.length,3);
  act('finance@example.com');t=await ticket(n.id);assert.equal((await call('approve',{id:n.id,version:t.version})).status,403);
  for(const email of ['manager@example.com','bu@example.com','finance@example.com']){act(email);await change('approve',n.id);}
  assert.equal((await ticket(n.id)).status,'Approved');
  assert.equal(rules.dueDate(1,['2026-10-16'],new Date('2026-10-15T12:00:00Z')),'2026-10-19');
  act('interviewer@example.com');const denied=await handle(new Request(BASE+'files/'+(await (async()=>{act('hr@example.com');const tt=await ticket(n.id);act('interviewer@example.com');return tt.attachments[0].id;})())));assert.equal(denied.status,403);
+ console.log('PASS: requester submission without salary/budget, financial-field tampering ignored, requester confidentiality and HR financial review gate');
  console.log('PASS: server authentication, membership, roles, confidentiality, conditional approval routing, approval order, HR authorisation, screening, interviews, feedback gate, offers, fill/close/reopen, holds, private uploads/downloads, concurrency, audit integrity and holiday SLAs');
  const {pbkdf2Sync,randomBytes}=require('node:crypto');
  const salt=randomBytes(16),testPassword='FixturePassword-123';

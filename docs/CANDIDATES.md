@@ -36,3 +36,7 @@ Ubuntu stores candidate profiles/interviews in the existing SQLite records, staf
 No hiring-platform sync, public application portal, AI résumé scoring or email delivery is added by this change. Document malware scanning and automated retention remain outside the current implementation.
 
 HR/admin can delete incorrectly uploaded candidate documents from the candidate profile. This removes the profile entry, file metadata and private stored object, and records a deletion event. Interviewers cannot delete documents. Upload the corrected document afterwards.
+
+## Requester and HR financial responsibilities
+
+Hiring request forms collect the role, headcount, justification and target date without salary, funding status or cost-centre inputs. These are completed by HR in the review dialog before routing for approval. The server ignores financial fields in requester create/edit payloads. Requester-only accounts do not receive salary/budget/cost-centre fields; assigned approvers and HR can review the relevant financial information. Existing stored financial records are preserved.

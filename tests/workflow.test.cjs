@@ -66,3 +66,8 @@ await uploadCandidateDocument({preventDefault(){},target:{file:{files:[{name:'sa
 assert.equal(c.documents.length,before+1);assert.ok(c.documents.at(-1).url.startsWith('data:application/pdf'));assert.equal(busy,false);
 window.confirm=()=>true;await deleteCandidateDocument(t.id,c.id,c.documents.at(-1).id);assert.equal(c.documents.length,before);console.log('PASS: demo résumé upload and document deletion work without crypto.randomUUID on HTTP LAN browsers');
 })()`,context);})().catch(e=>{console.error(e);process.exitCode=1;});
+
+const appSource=fs.readFileSync(__dirname+'/../public/app.js','utf8');
+const newRequestSource=appSource.slice(appSource.indexOf('function newRequest('),appSource.indexOf('function conditional('));
+assert.ok(!newRequestSource.includes("'salaryMin'"));assert.ok(!newRequestSource.includes("'salaryMax'"));assert.ok(!newRequestSource.includes("'costCentre'"));
+vm.runInContext(`const financeHTML=hrFinanceFields({});assert.ok(financeHTML.includes('name="salaryMin"'));assert.ok(financeHTML.includes('name="costCentre"'));console.log('PASS: new request omits financial inputs; HR review includes them');`,context);
