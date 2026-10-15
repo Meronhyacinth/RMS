@@ -11,4 +11,4 @@ export const loginLimits=sqliteTable('login_limits',{key:text('key').primaryKey(
 export const staffLogins=sqliteTable('staff_logins',{email:text('email').primaryKey(),passwordHash:text('password_hash').notNull(),version:integer('version').notNull().default(1)});
 
 export const ticketCounters=sqliteTable('ticket_counters',{prefix:text('prefix').primaryKey(),value:integer('value').notNull()});
-export const ticketIdAliases=sqliteTable('ticket_id_aliases',{oldId:text('old_id').primaryKey(),newId:text('new_id').notNull().unique()});
+export const ticketIdAliases=sqliteTable('ticket_id_aliases',{oldId:text('old_id').primaryKey(),newId:text('new_id').notNull()});

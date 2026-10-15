@@ -13,18 +13,15 @@ vm.runInContext(`
 const blocked=tickets.find(t=>t.status==='Pending Approval');
 transition(blocked.id,'Sourcing');
 assert.equal(blocked.status,'Pending Approval','Unapproved request must not enter sourcing');
-const finIndex=blocked.approvals.length-1;
-approve(blocked.id,finIndex);
-assert.equal(blocked.approvals[finIndex].done,false,'Approvals must follow route order');
-blocked.approvals.forEach((_,i)=>approve(blocked.id,i));
+assert.equal(blocked.approvals.length,1);approve(blocked.id,0);
 assert.equal(blocked.status,'Approved');
 transition(blocked.id,'Ready for Recruitment');
 assert.equal(blocked.status,'Ready for Recruitment');
 transition(blocked.id,'Sourcing');
 assert.equal(blocked.status,'Sourcing');
 assert.ok(blocked.history.some(e=>e.text.includes('All approvals complete')));
-assert.deepEqual(Array.from(route({type:'Replacement',budget:'Budgeted'})),['Hiring Manager']);
-assert.deepEqual(Array.from(route({type:'New headcount',budget:'Unbudgeted'})),['Hiring Manager','Business Unit Head','Finance']);
+assert.deepEqual(Array.from(route({type:'Replacement',budget:'Budgeted'})),['HR']);
+assert.deepEqual(Array.from(route({type:'New headcount',budget:'Unbudgeted'})),['HR']);
 assert.equal(esc('<script>'), '&lt;script&gt;');
 assert.equal(csvCell('=CMD()').charCodeAt(1),39);
 transition(blocked.id,'On Hold','Awaiting budget review');
@@ -71,3 +68,13 @@ const appSource=fs.readFileSync(__dirname+'/../public/app.js','utf8');
 const newRequestSource=appSource.slice(appSource.indexOf('function newRequest('),appSource.indexOf('function conditional('));
 assert.ok(!newRequestSource.includes("'salaryMin'"));assert.ok(!newRequestSource.includes("'salaryMax'"));assert.ok(!newRequestSource.includes("'costCentre'"));
 vm.runInContext(`const financeHTML=hrFinanceFields({});assert.ok(financeHTML.includes('name="salaryMin"'));assert.ok(financeHTML.includes('name="costCentre"'));console.log('PASS: new request omits financial inputs; HR review includes them');`,context);
+
+vm.runInContext(fs.readFileSync(__dirname+'/../public/hr-policies.js','utf8'),context);
+vm.runInContext(`
+const lo={value:'6000'},hi={value:'4000'};syncSalaryBounds({elements:{namedItem:n=>n==='salaryMin'?lo:hi}});assert.equal(hi.value,'6000');assert.equal(hi.min,'6000');
+assert.ok(hrFinanceFields({}).includes('name="manager"'));
+assert.ok(settingsPage().includes('Rejection email template'));assert.ok(settingsPage().includes('Interview email template'));assert.ok(settingsPage().includes('Edit ticket ID'));assert.ok(settingsPage().includes('Position catalogue'));
+const hrT=tickets.find(t=>t.candidates?.length);closePositionDialog(hrT.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('No email is sent'));
+assert.ok(dashboard().includes('Withdrawn'));assert.equal(terminal.includes('Filled'),false);
+console.log('PASS: salary bound alignment, HR HOD fields, HR settings/templates, manual-closure dialog and withdrawal bar');
+`,context);
