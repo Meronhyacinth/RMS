@@ -20,12 +20,15 @@ async function call(path,data){const response=await handle(new Request(BASE+path
 async function ok(path,data){const r=await call(path,data);assert.equal(r.status,200,JSON.stringify(r));return r.data;}
 async function ticket(id){return (await ok('workspace')).tickets.find(t=>t.id===id);}
 async function change(path,id,data={}){const t=await ticket(id);return ok(path,{id,version:t.version,...data});}
-const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEmail:'manager@example.com',team:'Services',grade:'Engineer',vacancies:1,employment:'Permanent',location:'Kuala Lumpur',justification:'Replace departing engineer',target:'2026-12-01',priority:'Normal',requirements:'Service experience',salaryMin:4000,salaryMax:6000,budget:'Budgeted',costCentre:'CC-01',replacement:'EMP-01',vacancyDate:'2026-10-14',type:'Replacement'};
+const data={title:'Service Engineer',bu:'Technology',manager:'Manager',managerEmail:'manager@example.com',team:'Services',grade:'Engineer',vacancies:1,employment:'Permanent',location:'COE',justification:'Replace departing engineer',target:'2026-12-01',priority:'Normal',requirements:'Service experience',salaryMin:4000,salaryMax:6000,budget:'Budgeted',costCentre:'CC-01',replacement:'EMP-01',vacancyDate:'2026-10-14',type:'Replacement'};
 (async()=>{
  identity=null;assert.equal((await call('workspace')).status,401);
  identity={userId:'uninvited',email:'outsider@example.com',displayName:'Outsider'};assert.equal((await call('workspace')).status,403);
  identity={userId:'owner-id',email:'owner@example.test',displayName:'Workspace Owner'};
  await ok('workspace');
+ const teamDraft=await ok('create',{data:{title:'Software Engineer',positionGroup:'Software Team',location:'HQ'}});assert.match(teamDraft.id,/^HQ-\d{3,}$/);let teamTicket=await ticket(teamDraft.id);assert.equal(teamTicket.positionGroup,'Software Team');assert.equal(teamTicket.location,'HQ');
+ assert.equal((await call('create',{data:{title:'Engineer',positionGroup:'COE',location:'COE'}})).status,400);
+ assert.equal((await call('create',{data:{title:'Engineer',positionGroup:'SDT',location:'Other'}})).status,400);
  for(const [email,name,role] of [['requester@example.com','Requester','requester'],['manager@example.com','Manager','approver'],['bu@example.com','BU head','approver'],['finance@example.com','Finance','approver'],['hr@example.com','Recruiter','hr'],['interviewer@example.com','Interviewer','requester']])await ok('members',{email,name,role});
  await ok('settings',{hrSla:2,approvalSla:3,recruitmentSla:5,extraApproval:true,buApprover:'bu@example.com',financeApprover:'finance@example.com',escalationEmail:'hr@example.com',holidays:['2026-10-16'],closureRule:'Offer accepted'});
  const act=email=>identity={userId:email,email,displayName:email};

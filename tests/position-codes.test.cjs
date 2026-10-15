@@ -3,7 +3,7 @@ const {readFileSync,readdirSync}=require('node:fs');
 const assert=require('node:assert/strict');
 const db=new DatabaseSync(':memory:');
 const migrations=readdirSync('drizzle').filter(n=>n.endsWith('.sql')).sort();
-for(const file of migrations.filter(n=>!n.startsWith('0003')))db.exec(readFileSync('drizzle/'+file,'utf8'));
+for(const file of migrations.filter(n=>n<'0003'))db.exec(readFileSync('drizzle/'+file,'utf8'));
 for(const [id,title,bu] of [['RMS-A','Network Security Engineer','Engineering'],['RMS-B','Software Engineer','Technology'],['RMS-C','Sales Specialist - Network Security','Sales'],['RMS-D','System Engineer – L1/L2','Technology'],['COE-007','Existing Engineer','Engineering']]){
  db.prepare('INSERT INTO tickets VALUES (?,?,1,?)').run(id,JSON.stringify({id,title,bu,created:'2026-10-01',candidates:[{id:'candidate-1',documents:[{id:'file-1'}]}],interviews:[{id:'interview-1',candidateId:'candidate-1',feedback:'Retained'}]}),'fixture');
 }
@@ -19,4 +19,4 @@ for(const table of ['files','events','notices'])assert.equal(db.prepare('SELECT 
 const t=JSON.parse(db.prepare('SELECT data FROM tickets WHERE id=?').get('COE-008').data);assert.equal(t.id,'COE-008');assert.equal(t.legacyId,'RMS-A');assert.equal(t.candidates[0].documents[0].id,'file-1');assert.equal(t.interviews[0].feedback,'Retained');
 assert.equal(db.prepare('SELECT key FROM files').get().key,'unchanged/private-key');
 for(const [prefix,expected] of [['COE',10],['HQ',3],['COE',11]])assert.equal(db.prepare('INSERT INTO ticket_counters(prefix,value) VALUES (?,1) ON CONFLICT(prefix) DO UPDATE SET value=ticket_counters.value+1 RETURNING value').get(prefix).value,expected);
-db.close();console.log('PASS: independent sequential position codes; legacy migration preserves candidate records, private file keys, notices, audit history and existing code ranges');
+db.exec(readFileSync('drizzle/0004_position_teams.sql','utf8'));const mapped=JSON.parse(db.prepare('SELECT data FROM tickets WHERE id=?').get('COE-008').data);assert.equal(mapped.positionGroup,'NetSec Team');assert.equal(mapped.location,'COE');const software=JSON.parse(db.prepare('SELECT data FROM tickets WHERE id=?').get('HQ-001').data);assert.equal(software.positionGroup,'Software Team');assert.equal(software.location,'HQ');assert.equal(software.candidates[0].id,'candidate-1');db.close();console.log('PASS: independent sequential position codes; legacy migration preserves candidate records, private file keys, notices, audit history and existing code ranges');

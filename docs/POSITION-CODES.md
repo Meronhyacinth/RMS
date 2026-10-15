@@ -2,10 +2,10 @@
 
 Position/request IDs use separate, permanent sequences:
 
-- `COE-001`, `COE-002`, … for engineering positions.
-- `HQ-001`, `HQ-002`, … for sales, software and corporate positions.
+- `COE-001`, `COE-002`, … for positions at COE.
+- `HQ-001`, `HQ-002`, … for positions at HQ.
 
-Software engineers/developers belong to HQ under the requested grouping. Sales roles take HQ even when their title mentions network/security. The form suggests a group from the title, and staff can select COE/HQ explicitly for less obvious positions before saving. Once allocated, the code and its group remain fixed. Sequences do not reset each year; the numeric part grows beyond three digits when necessary.
+Software engineers/developers belong to HQ under the requested grouping. Sales roles take HQ even when their title mentions network/security. The form suggests a group from the title, and staff can select COE/HQ explicitly for less obvious positions before saving. Once allocated, the code and its location remain fixed; the team can be corrected while the request is editable. Sequences do not reset each year; the numeric part grows beyond three digits when necessary.
 
 New request forms offer editable role suggestions based on https://cllsystems.com/careers/ (checked 15 October 2026): Team Lead - Network Security Engineer, Network Security Engineer, System Engineer – L1/L2, Software Sales Manager, Sales Specialist - Network Security, Inside Sales Representative, Client Manager (Executive Level), Solution Consultant - Infrastructure, Project Coordinator / Associate and Internship. Software Team Lead is also referenced on that page. Software Developer is an additional generic software-team suggestion, not a claim of a current advertised vacancy. Custom position names remain available.
 
@@ -20,3 +20,7 @@ Ubuntu runs the migration automatically when rebuilt and started. No manual data
 ## Document upload alignment
 
 Document type and file controls share a grid row. The action aligns to the controls instead of the extra helper text beneath the file input. At narrow widths, the form stacks into one column.
+
+## Team and location correction
+
+Position group is the team: SDT, NetSec Team, NOC, Software Team, Human Resource, Sales, Finance, Operations, Marketing, Management or Other. Location is a separate HQ/COE field. New IDs use the location prefix, not the team name. Location is fixed once the ID is allocated; teams can be corrected while a request remains editable. Existing IDs and references are retained while the data-only migration converts old COE/HQ group values to inferred team names and HQ/COE locations. Earlier group-as-prefix guidance above is superseded by this correction.

@@ -29,6 +29,13 @@
       "when": 1792047870728,
       "tag": "0003_salty_shadowcat",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792049981394,
+      "tag": "0004_position_teams",
+      "breakpoints": true
     }
   ]
 }
