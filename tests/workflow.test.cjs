@@ -72,12 +72,16 @@ vm.runInContext(`const financeHTML=hrFinanceFields({});assert.ok(financeHTML.inc
 vm.runInContext(fs.readFileSync(__dirname+'/../public/hr-policies.js','utf8'),context);
 vm.runInContext(`
 const lo={value:'6000'},hi={value:'4000'};syncSalaryBounds({elements:{namedItem:n=>n==='salaryMin'?lo:hi}});assert.equal(hi.value,'6000');assert.equal(hi.min,'6000');
-assert.ok(hrFinanceFields({}).includes('name="manager"'));
+assert.ok(!hrFinanceFields({}).includes('name="manager"'));
 assert.ok(settingsPage().includes('Rejection email template'));assert.ok(settingsPage().includes('Interview email template'));assert.ok(settingsPage().includes('Edit ticket ID'));assert.ok(settingsPage().includes('Position catalogue'));
 const hrT=tickets.find(t=>t.candidates?.length);closePositionDialog(hrT.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('No email is sent'));
 assert.ok(dashboard().includes('Withdrawn'));assert.equal(terminal.includes('Filled'),false);
-console.log('PASS: salary bound alignment, HR HOD fields, HR settings/templates, manual-closure dialog and withdrawal bar');
+console.log('PASS: salary bound alignment, requestor HOD ownership, HR settings/templates, manual-closure dialog and withdrawal bar');
 `,context);
 
 vm.runInContext(`const offerTicket=tickets.find(t=>t.status==='Offer Pending');advanceDialog(offerTicket.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('Candidate withdrawn'));assert.ok(document.querySelector('#dialog').innerHTML.includes('Hold review date'));assert.ok(document.querySelector('#dialog').innerHTML.includes('On Hold'));`,context);
 console.log('PASS: demo offer update includes candidate withdrawal and hold review controls');
+
+assert.ok(newRequestSource.includes("'manager'"));assert.ok(newRequestSource.includes('HOD name *'));
+vm.runInContext(`const reviewT=tickets.find(t=>t.candidates?.length),reviewC=reviewT.candidates[0];candidateReviewDialog(reviewT.id,reviewC.id,'Interview requested');assert.ok(document.querySelector('#dialog').innerHTML.includes('Notify HR to schedule'));assert.ok(candidateReviewActions({...reviewT,status:'Interview'},{...reviewC,status:'Applied'}).includes('Reject'));assert.ok(candidateReviewActions(reviewT,{...reviewC,status:'Hired'}).includes('Close hiring position'));assert.ok(dashboard().includes('High-priority hiring'));assert.ok(priorityBadge({priority:'High'}).includes('priority-alert'));`,context);
+console.log('PASS: requestor HOD fields, team-lead interview request, reject action, hired closure button and prominent priority alerts');

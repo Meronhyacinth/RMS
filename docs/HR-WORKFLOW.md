@@ -1,9 +1,9 @@
 # HR workflow update
 
 - Only HR/admin approves hiring. Existing pending multi-person approval routes become a single HR step; completed historical decisions remain in history.
-- Requesters do not enter HOD, salary or budget. HR enters HOD name (required), HOD email (optional), salary range and funding details during review. Job grade is optional.
+- Requestors enter HOD name (required) and HOD email (optional). A registered HOD with the matching email can review candidates for that position. HR enters salary range and funding details during review. Job grade is optional.
 - Salary maximum tracks the entered minimum when empty or lower. The server rejects maximums below minimum. Errors inside dialogs are shown inside the dialog, above the backdrop.
-- HR can edit open hiring position details without restarting the workflow. An additional HR salary/HOD edit action is available while open. Requesters retain draft/clarification-only editing.
+- HR can edit open hiring position details without restarting the workflow. An additional HR salary/budget edit action is available while open. Requesters retain draft/clarification-only editing.
 - Recording a hire does not close a position. Filled is an open state; HR can continue hiring or manually close the position. HR may increase vacancies when continuing hiring.
 - HR's Close position dialog records Filled, Withdrawn or Cancelled as the outcome and allows HR to identify hired candidates. Existing/selected Hired candidates are preserved. Remaining Applied, Shortlisted, Interview and Offer candidates become Rejected; previously Rejected/Withdrawn candidates stay unchanged.
 - Closure prepares rejection email drafts from the saved template. Scheduling candidate interviews prepares interview email drafts. Drafts remain “Standby — not sent”; no sending provider or external email action is connected. Drafts appear in the position's HR-only email section.
@@ -12,3 +12,7 @@
 - Pipeline typography is larger, overdue labels are bright red and the dashboard includes a Withdrawn position-outcome bar.
 
 These rules supersede earlier documentation about manager/Finance approvals or automatic final closure. Email drafts are stored with the position and withheld from non-HR accounts.
+
+- Requestors, the named HOD (matching staff email), and assigned interviewers can review candidates within their access. Schedule interview sends HR an in-app request; HR chooses the date and interviewer. Reject requires a reason and prepares an email draft on standby.
+- High-priority open requests appear in a red HR overview queue and notifications, with badges on lists and pipeline cards. HR notices for these requests are marked HIGH PRIORITY.
+- After a candidate is marked Hired, HR can use Close hiring position directly from the candidate list/profile. Closure remains manual.
