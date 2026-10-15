@@ -1,7 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {getChatGPTUser} from '../app/chatgpt-auth';
 import {passwordLoginEnabled,hashPassword,verifyPassword,sessionCookie,logoutCookie,sessionUser,clearLegacyCookie} from './password-auth';
-import {defaults,positionLocation,positionTeams,suggestPositionTeam,isHR,canViewCandidate,canView,permissions,safeTicket,validateInput,dueDate,nextFor,allowedNext,terminal,recruitment, type Ticket,type Member} from './rules';
+import {defaults,positionLocation,positionTeams,suggestPositionTeam,isHR,canViewCandidate,canView,permissions,safeTicket,validateInput,nextFor,allowedNext,terminal,recruitment, type Ticket,type Member} from './rules';
 
 const OWNER_EMAIL=((env as unknown as {RMS_OWNER_EMAIL?:string}).RMS_OWNER_EMAIL||'').toLowerCase();
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -23,7 +23,7 @@ async function member(req:Request){
  if(!m!.user_id)await stmt('UPDATE members SET user_id=? WHERE email=? AND user_id IS NULL',u!.userId,email).run();
  return {...m!,user_id:u!.userId};
 }
-async function configuration(){const r=await stmt('SELECT data FROM config WHERE id=?','workflow').first<any>();return {...defaults,...(r?JSON.parse(r.data):{})};}
+async function configuration(){const r=await stmt('SELECT data FROM config WHERE id=?','workflow').first<any>();const config:any={...defaults,...(r?JSON.parse(r.data):{})};for(const key of ['hrSla','approvalSla','recruitmentSla','holidays'])delete config[key];return config;}
 async function activeMember(email:string){return stmt('SELECT * FROM members WHERE email=? AND active=1',email).first<Member>();}
 async function approvalRoute(t:Ticket,s:any){return [{name:'HR',email:'',done:false}];}
 
@@ -95,16 +95,15 @@ export async function handle(req:Request){try{
   await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Membership updated: '+email+' / '+body.role).run();return json({ok:true});
  }
  if(path==='settings'){
-  requireHR(m);for(const k of ['hrSla','approvalSla','recruitmentSla'])if(!Number.isInteger(+(body[k]??s[k]))||+(body[k]??s[k])<1||+(body[k]??s[k])>90)fail('SLA targets must be 1–90 business days.');
-  const config={...s,...body,extraApproval:false};if(body.positionCatalog!==undefined){if(!Array.isArray(body.positionCatalog)||body.positionCatalog.length>300||body.positionCatalog.some((x:any)=>typeof x!=='string'||!x.trim()||x.length>100))fail('Use up to 300 position titles, each 1–100 characters.');config.positionCatalog=[...new Set(body.positionCatalog.map((x:string)=>x.trim()))];}for(const key of ['rejectTemplate','interviewTemplate']){if(body[key]!==undefined){const tpl=body[key];if(!tpl||typeof tpl.subject!=='string'||!tpl.subject.trim()||tpl.subject.length>200||typeof tpl.body!=='string'||!tpl.body.trim()||tpl.body.length>10000)fail('Enter a subject and body for each email template.');config[key]={subject:tpl.subject,body:tpl.body};}}for(const k of ['systemEmail','replyTo']){config[k]=clean(config[k],254).toLowerCase();if(config[k]&&!validEmail(config[k]))fail('Enter a valid '+(k==='systemEmail'?'recruitment':'reply-to')+' email address.');}config.senderName=clean(config.senderName||'Recruitment team',100);for(const k of ['escalationEmail']){config[k]=clean(config[k]).toLowerCase();if(config[k]&&!await activeMember(config[k]))fail('Select an active member for '+k+'.');}
-  if(!Array.isArray(config.holidays)||config.holidays.length>100||config.holidays.some((x:string)=>!iso(x)))fail('Enter valid public holiday dates.');
+  requireHR(m);
+  const config={...s,...body,extraApproval:false};for(const key of ['hrSla','approvalSla','recruitmentSla','holidays'])delete config[key];if(body.positionCatalog!==undefined){if(!Array.isArray(body.positionCatalog)||body.positionCatalog.length>300||body.positionCatalog.some((x:any)=>typeof x!=='string'||!x.trim()||x.length>100))fail('Use up to 300 position titles, each 1–100 characters.');config.positionCatalog=[...new Set(body.positionCatalog.map((x:string)=>x.trim()))];}for(const key of ['rejectTemplate','interviewTemplate']){if(body[key]!==undefined){const tpl=body[key];if(!tpl||typeof tpl.subject!=='string'||!tpl.subject.trim()||tpl.subject.length>200||typeof tpl.body!=='string'||!tpl.body.trim()||tpl.body.length>10000)fail('Enter a subject and body for each email template.');config[key]={subject:tpl.subject,body:tpl.body};}}for(const k of ['systemEmail','replyTo']){config[k]=clean(config[k],254).toLowerCase();if(config[k]&&!validEmail(config[k]))fail('Enter a valid '+(k==='systemEmail'?'recruitment':'reply-to')+' email address.');}config.senderName=clean(config.senderName||'Recruitment team',100);for(const k of ['escalationEmail']){config[k]=clean(config[k]).toLowerCase();if(config[k]&&!await activeMember(config[k]))fail('Select an active member for '+k+'.');}
   if(!['Offer accepted','Employee joined'].includes(config.closureRule))fail('Choose a valid Filled definition.');
   await stmt('INSERT INTO config (id,data) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data','workflow',JSON.stringify(config)).run();
   await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Workflow settings updated').run();return json({ok:true});
  }
  if(path==='read-notices'){await stmt('UPDATE notices SET read=1 WHERE email=?',m.email).run();return json({ok:true});}
  if(path==='create'){
-  const t=payload(body.data);checkInput(t,true);t.positionGroup=t.positionGroup||suggestPositionTeam(t.title,t.bu);if(!positionTeams.includes(t.positionGroup))fail('Choose a valid position group / team.');t.location=t.location||positionLocation(t.title,t.bu);if(!['COE','HQ'].includes(t.location))fail('Location must be HQ or COE.');const prefix=t.location;const seq=await stmt('INSERT INTO ticket_counters (prefix,value) VALUES (?,1) ON CONFLICT(prefix) DO UPDATE SET value=ticket_counters.value+1 RETURNING value',prefix).first<any>();Object.assign(t,{id:prefix+'-'+String(seq.value).padStart(3,'0'),positionGroup:t.positionGroup,status:'Draft',requester:m.name,requesterEmail:m.email,owner:m.name,ownerEmail:m.email,created:new Date().toISOString().slice(0,10),next:nextFor('Draft'),due:dueDate(s.hrSla,s.holidays),attachments:[],approvals:[],comments:[],history:[],interviews:[],candidates:[],filledCount:0,salaryMin:null,salaryMax:null,budget:'TBD',costCentre:''});
+  const t=payload(body.data);checkInput(t,true);t.positionGroup=t.positionGroup||suggestPositionTeam(t.title,t.bu);if(!positionTeams.includes(t.positionGroup))fail('Choose a valid position group / team.');t.location=t.location||positionLocation(t.title,t.bu);if(!['COE','HQ'].includes(t.location))fail('Location must be HQ or COE.');const prefix=t.location;const seq=await stmt('INSERT INTO ticket_counters (prefix,value) VALUES (?,1) ON CONFLICT(prefix) DO UPDATE SET value=ticket_counters.value+1 RETURNING value',prefix).first<any>();Object.assign(t,{id:prefix+'-'+String(seq.value).padStart(3,'0'),positionGroup:t.positionGroup,status:'Draft',requester:m.name,requesterEmail:m.email,owner:m.name,ownerEmail:m.email,created:new Date().toISOString().slice(0,10),next:nextFor('Draft'),due:'',attachments:[],approvals:[],comments:[],history:[],interviews:[],candidates:[],filledCount:0,salaryMin:null,salaryMax:null,budget:'TBD',costCentre:''});
   await record(t,m,'Draft created');return json({id:t.id});
  }
  const {t,version}=await getTicket(body.id,m);if(body.version!==version)fail('This request changed in another session. Refresh and try again.',409);
@@ -130,13 +129,13 @@ export async function handle(req:Request){try{
   requireHR(m);if(t.status==='Closed'||t.status==='Draft')fail('Only an open or completed hiring position can be closed.');closePosition(t,m,s,body);note='Position manually closed; remaining candidates rejected; email drafts on standby';
  }else if(path==='edit'){
   if(!p.edit)fail('Only the requester can edit drafts or clarification responses.',403);const d=payload(body.data);d.positionGroup=d.positionGroup||t.positionGroup;d.location=d.location||t.location;if(!positionTeams.includes(d.positionGroup))fail('Choose a valid position group / team.');if(!['COE','HQ'].includes(d.location))fail('Location must be HQ or COE.');if(d.location!==t.location)fail('Location is fixed after the position ID is allocated.');const editingOpen=isHR(m)&&!['Draft','Clarification Required'].includes(t.status);checkInput(d,editingOpen?false:!!body.draft);if(d.vacancies<(t.filledCount||0))fail('Vacancies cannot be lower than recorded hires.');Object.assign(t,d);
-  if(!body.draft&&!editingOpen){if(t.type==='New headcount'&&!t.attachments.length)fail('Attach a job description for a new role.');t.status='Pending HR Review';t.submittedAt??=new Date().toISOString();t.owner='HR review queue';t.ownerEmail='';t.next=nextFor(t.status);t.due=dueDate(s.hrSla,s.holidays);t.approvals=[];}
+  if(!body.draft&&!editingOpen){if(t.type==='New headcount'&&!t.attachments.length)fail('Attach a job description for a new role.');t.status='Pending HR Review';t.submittedAt??=new Date().toISOString();t.owner='HR review queue';t.ownerEmail='';t.next=nextFor(t.status);t.due=t.due||'';t.approvals=[];}
   note=editingOpen?'Open position details updated':body.draft?'Draft saved':'Request submitted for HR review';
  }else if(path==='approve'){
   if(!p.approve)fail('Only the current assigned approver can record this decision.',403);t.approvals=[{name:'HR',email:m.email,done:false}];const a=t.approvals[0];a.done=true;a.by=m.name;a.at=new Date().toISOString();note=a.name+' approval recorded';
-  if(t.approvals.every((a:any)=>a.done)){t.status='Approved';t.approvedAt=new Date().toISOString();t.next=nextFor(t.status);t.due=dueDate(s.hrSla,s.holidays);}else{t.next='Awaiting '+t.approvals.find((a:any)=>!a.done).name+' approval';t.due=dueDate(s.approvalSla,s.holidays);}
+  if(t.approvals.every((a:any)=>a.done)){t.status='Approved';t.approvedAt=new Date().toISOString();t.next=nextFor(t.status);t.due=t.due||'';}else{t.next='Awaiting '+t.approvals.find((a:any)=>!a.done).name+' approval';t.due=t.due||'';}
  }else if(path==='assign'){
-  requireHR(m);if(terminal.includes(t.status))fail('Closed outcomes cannot be reassigned.');const person=await activeMember(clean(body.ownerEmail));if(!person||!isHR(person))fail('Select an active HR owner.');if(!iso(body.due)||!clean(body.next))fail('Enter a next action and valid due date.');t.owner=person!.name;t.ownerEmail=person!.email;t.next=clean(body.next);t.due=body.due;note='Assigned to '+t.owner+' · '+t.next+' · Due '+t.due;
+  requireHR(m);if(terminal.includes(t.status))fail('Closed outcomes cannot be reassigned.');const person=await activeMember(clean(body.ownerEmail));if(!person||!isHR(person))fail('Select an active HR owner.');if((body.due&&!iso(body.due))||!clean(body.next))fail('Enter a next action and, if provided, a valid due date.');t.owner=person!.name;t.ownerEmail=person!.email;t.next=clean(body.next);t.due=body.due||'';note='Assigned to '+t.owner+' · '+t.next+' · Due '+t.due;
  }else if(path==='comment'){
   if(!clean(body.text))fail('Enter a comment.');t.comments.push({text:clean(body.text,4000),actor:m.name,at:new Date().toISOString()});note='Comment added';
  }else if(path==='interview'){
@@ -153,7 +152,7 @@ export async function handle(req:Request){try{
   let next=target;
   if(target==='Reopen'){if(!p.reopen)fail('Only final outcomes can be reopened.');next='Pending HR Review';t.approvals=[];delete t.outcome;delete t.closedAt;delete t.filledAt;delete t.approvedAt;delete t.authorisedAt;delete t.authorisedBy;t.filledCount=0;t.offer=null;t.interviews=(t.interviews||[]).map((i:any)=>({...i,archived:true}));}
   else if(target==='Resume'){if(t.status!=='On Hold')fail('Only held requests can be resumed.');next=t.previousStatus;}
-  else if(target==='On Hold'){if(!p.hold||t.status==='On Hold'||!iso(body.review)||body.review<new Date().toISOString().slice(0,10))fail('Enter a current or future hold review date.');t.previousStatus=t.status;t.holdReason=reason;}
+  else if(target==='On Hold'){if(!p.hold||t.status==='On Hold'||!iso(body.review)||body.review<new Date().toISOString().slice(0,10))fail('Enter a current or future hold review date.');t.previousStatus=t.status;t.dueBeforeHold=t.due||'';t.holdReason=reason;}
   else if(target==='Candidate withdrawn'){
    if(!p.recruit||!['Offer Preparation','Offer Pending'].includes(t.status))fail('Candidate withdrawal is available during the offer stages.',403);
    if(!reason)fail('Record the withdrawal reason.');
@@ -182,7 +181,7 @@ export async function handle(req:Request){try{
   if(next==='Filled'){if(t.offer?.response!=='Accepted')fail('Record an accepted offer first.');const count=+body.filledCount;if(!Number.isInteger(count)||count<1||count>t.vacancies)fail('Enter a valid number of filled vacancies.');if(s.closureRule==='Employee joined'&&body.joined!==true)fail('Confirm employee joining before marking Filled.');t.filledCount=(t.filledCount||0)+count;if(t.filledCount>t.vacancies)fail('Filled count exceeds requested vacancies.');if(t.filledCount<t.vacancies){next='Sourcing';t.offer=null;}else t.filledAt=new Date().toISOString();}
   if(next==='Closed'){closePosition(t,m,s,{outcome:t.filledCount?'Filled':t.status==='Cancelled'?'Cancelled':'Filled',reason:'Position closed manually',hiredCandidateIds:[]});}
   if(recruitment.includes(next)&&target!=='Resume'&&!reason)fail('Record a milestone note.');
-  t.status=next;t.next=next==='On Hold'?'Review hold: '+reason:nextFor(next);t.due=next==='On Hold'?body.review:dueDate(next==='Pending Approval'?s.approvalSla:recruitment.includes(next)?s.recruitmentSla:s.hrSla,s.holidays);
+  t.status=next;t.next=next==='On Hold'?'Review hold: '+reason:nextFor(next);t.due=next==='On Hold'?body.review:(target==='Resume'?t.dueBeforeHold||'':t.due||'');
   if(next==='Clarification Required'){t.owner=t.requester;t.ownerEmail=t.requesterEmail;}
   note='Status changed to '+next+(reason?': '+reason:'');
  }else fail('Unknown operation.',404);

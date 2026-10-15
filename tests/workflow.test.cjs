@@ -85,3 +85,6 @@ console.log('PASS: demo offer update includes candidate withdrawal and hold revi
 assert.ok(newRequestSource.includes("'manager'"));assert.ok(newRequestSource.includes('HOD name *'));
 vm.runInContext(`const reviewT=tickets.find(t=>t.candidates?.length),reviewC=reviewT.candidates[0];candidateReviewDialog(reviewT.id,reviewC.id,'Interview requested');assert.ok(document.querySelector('#dialog').innerHTML.includes('Notify HR to schedule'));assert.ok(candidateReviewActions({...reviewT,status:'Interview'},{...reviewC,status:'Applied'}).includes('Reject'));assert.ok(candidateReviewActions(reviewT,{...reviewC,status:'Hired'}).includes('Close hiring position'));assert.ok(dashboard().includes('High-priority hiring'));assert.ok(priorityBadge({priority:'High'}).includes('priority-alert'));`,context);
 console.log('PASS: requestor HOD fields, team-lead interview request, reject action, hired closure button and prominent priority alerts');
+
+vm.runInContext(`assert.ok(!settingsPage().includes('HR review days'));assert.ok(!settingsPage().includes('Public holidays'));assert.equal(overdue({status:'Sourcing',due:''}),false);assert.equal(date(''),'Not set');`,context);
+console.log('PASS: SLA fields removed; unset due dates remain optional and are not overdue');
