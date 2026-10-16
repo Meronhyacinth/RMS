@@ -155,3 +155,7 @@ aside nav{min-width:0;width:100%}aside nav button{min-width:0;max-width:100%;whi
 /* Compact sidebar branding and direct access to navigation. */
 aside{padding-top:20px}aside>nav{margin-top:20px}
 @media(max-width:850px){aside{padding-top:16px}aside>nav{margin-top:20px}}
+
+/* Keep the sidebar guide compact and the full menu usable on shorter screens. */
+aside .help{padding:6px 12px;margin-top:12px}aside .help button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:34px;font-size:12px;padding:4px 0}aside .help button span{margin-left:0}aside .profile{margin-top:12px;padding-top:12px}aside .aside-bottom{flex-shrink:0}
+@media(max-height:850px){aside{padding-top:14px;padding-bottom:12px}aside>nav{margin-top:12px}aside nav button{min-height:36px;padding-block:7px;margin-block:2px}aside .nav-divider{margin-block:10px}aside .brand{min-height:54px}aside .help{margin-top:8px}aside .profile{margin-top:8px;padding-top:8px}}
