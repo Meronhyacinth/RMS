@@ -88,7 +88,7 @@ export async function handle(req:Request){try{
  if(path==='change-password'){
   if(!passwordLoginEnabled())fail('Password sign-in is not configured.');const login=await stmt('SELECT * FROM staff_logins WHERE email=?',m.email).first<any>();
   if(typeof body.currentPassword!=='string'||body.currentPassword.length>256||!await verifyPassword(body.currentPassword,login?.password_hash||(m.email===OWNER_EMAIL?undefined:'invalid')))fail('Current password is incorrect.',403);
-  if(typeof body.password!=='string'||body.password.length<12||body.password.length>256)fail('Use a password of 12–256 characters.');if(body.password!==body.confirmPassword)fail('New passwords do not match.');
+  if(typeof body.password!=='string'||body.password.length<8||body.password.length>256)fail('Use a password of 8–256 characters.');if(body.password!==body.confirmPassword)fail('New passwords do not match.');
   const q=await credentialsQuery(m.email,body.password,login?.username,login?.version??null);const result=await db().batch([q]);if(!result[0].meta.changes)fail('Your credentials changed in another session. Sign in again.',409);await credentialAudit(m,'Own password changed').run();const saved={version:(login?.version||0)+1};
   const headers=new Headers({'Cache-Control':'no-store'});headers.append('Set-Cookie',await sessionCookie({email:m.email,name:m.name,version:saved.version}));return Response.json({ok:true},{headers});
  }
@@ -254,7 +254,7 @@ async function credentialsQuery(email:string,password:any,requestedUsername?:any
  const existing=await stmt('SELECT username,password_hash,version FROM staff_logins WHERE email=?',email).first<any>();const username=clean(requestedUsername||existing?.username||(email===OWNER_EMAIL?'admin':email),254).toLowerCase();
  if(username!==email&&!/^[a-z0-9][a-z0-9._-]{2,63}$/.test(username))fail('Use 3–64 letters, numbers, dots, underscores or hyphens for the username.');if(username==='admin'&&email!==OWNER_EMAIL)fail('The username admin is reserved.');
  if(await stmt('SELECT email FROM staff_logins WHERE username=? COLLATE NOCASE AND email<>?',username,email).first())fail('That username is already in use.');
- if(password!==undefined&&password!==''&&(typeof password!=='string'||password.length<12||password.length>256))fail('Use a password of 12–256 characters.');if(!password&&!existing)fail('Set a password for this account.');
+ if(password!==undefined&&password!==''&&(typeof password!=='string'||password.length<8||password.length>256))fail('Use a password of 8–256 characters.');if(!password&&!existing)fail('Set a password for this account.');
  const hash=password?await hashPassword(password):existing!.password_hash;
  if(expectedVersion===null)return stmt('INSERT OR IGNORE INTO staff_logins (email,username,password_hash,version) VALUES (?,?,?,1)',email,username,hash);
  if(expectedVersion!==undefined)return stmt('UPDATE staff_logins SET username=?,password_hash=?,version=version+1 WHERE email=? AND version=?',username,hash,email,expectedVersion);

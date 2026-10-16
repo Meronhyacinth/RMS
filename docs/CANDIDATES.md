@@ -6,7 +6,7 @@ Recruit Centinals now stores candidate applications against each hiring request.
 
 1. Sign in as the administrator and open **Team access**.
 2. Create HR staff with role **hr**, and team leads with role **interviewer**. Save each member first.
-3. Use **Set password** to create/reset that member's password (12–256 characters). Staff sign in using their email address and this password. The bootstrap `admin` password remains configured on the server.
+3. Use **Set password** to create/reset that member's password (8–256 characters). Staff sign in using their email address and this password. The bootstrap `admin` password remains configured on the server.
 4. A password reset revokes that staff member's existing sessions. Inactive members cannot sign in or use existing sessions.
 
 Ubuntu staff access uses these accounts directly. The hosted owner-private Site has an additional sharing gate: staff also need permission to open that Site. Adding a team member does not change Site sharing.
