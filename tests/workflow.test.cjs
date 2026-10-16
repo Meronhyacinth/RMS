@@ -131,3 +131,18 @@ const unordered=[{id:'rejected',status:'Rejected',appliedAt:'2026-12-01'},{id:'o
 const originalOrder=unordered.map(r=>r.c.id).join(',');assert.equal(candidateOrder(unordered).map(r=>r.c.id).join(','),'new,same-day,old,no-date,hold,hired,rejected,withdrawn');assert.equal(unordered.map(r=>r.c.id).join(','),originalOrder);
 `,context);
 console.log('PASS: candidates sort by workflow group, then newest application and creation time; missing dates and withdrawn records remain ordered');
+
+vm.runInContext(`
+document.querySelector('#dialog').close=function(){this.open=false};document.querySelector('#dialog').showModal=function(){this.open=true};const originalCatalogue=settings.positionCatalog,originalCatalogueIds=settings.positionCatalogIds;
+settings.positionCatalog=['Existing role'];settings.positionCatalogIds={};
+const catalogueForm={elements:{namedItem:()=>({value:'Existing role\\nNew engineer\\nNew sales'})}};
+const catalogueResult=preparePositionCatalogue(catalogueForm);
+assert.ok(document.querySelector('#dialog').innerHTML.includes('Ticket IDs for new positions'));
+assert.equal(pendingCatalogue.added.length,2);
+confirmCatalogueIds({preventDefault(){},target:{reportValidity:()=>true,elements:{namedItem:name=>({value:name==='catalogId0'?'COE-850':'HQ-850'})}}});
+catalogueResult.then(data=>{assert.equal(data.positionCatalogIds['New engineer'],'COE-850');assert.equal(data.positionCatalogIds['New sales'],'HQ-850');});
+const cancelledCatalogue=preparePositionCatalogue(catalogueForm);cancelCatalogueIds();cancelledCatalogue.then(data=>assert.equal(data,null));
+assert.deepEqual(settings.positionCatalog,['Existing role']);
+settings.positionCatalog=originalCatalogue;settings.positionCatalogIds=originalCatalogueIds;
+`,context);
+console.log('PASS: catalogue detects new titles, prompts for each ID, confirms mappings and cancels without changing saved settings');
