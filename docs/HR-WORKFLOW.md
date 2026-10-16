@@ -55,3 +55,5 @@ Success messages inside dialogs disappear after 3.5 seconds; error messages expi
 - Saving the position catalogue prompts for a unique custom Ticket ID (for example `ASD123`) for each new title. Cancel leaves the saved catalogue unchanged. Assigned IDs appear below the list and persist in shared settings. The first request for the title uses that ID; later requests receive unique sequential IDs. Existing titles can be saved without assigning IDs retroactively.
 
 - Team access uses one Edit account dialog for profile and credentials, including the owner account. Profile and credential updates save together. Existing role protections remain in effect. New staff emails use the fixed @cllsystems.com suffix.
+
+- Only the HR role sees and can use Approvals. Boss and Team leads can still view request status, but cannot approve hiring requests.
