@@ -108,7 +108,7 @@ console.log('PASS: requestor HOD fields, team-lead interview request, reject act
 vm.runInContext(`assert.ok(!settingsPage().includes('HR review days'));assert.ok(!settingsPage().includes('Public holidays'));assert.equal(overdue({status:'Sourcing',due:''}),false);assert.equal(date(''),'Not set');`,context);
 console.log('PASS: SLA fields removed; unset due dates remain optional and are not overdue');
 
-vm.runInContext(`liveMember={role:'hr'};members=[{email:'lead@example.test',name:'Lead',role:'team_lead',active:1},{email:'boss@example.test',name:'Boss',role:'boss',active:1,isOwner:true}];assert.ok(teamPage().includes('Remove access'));assert.ok(!teamPage().includes('<option value="boss">'));assert.equal(canManageMember(members[0]),true);assert.equal(canManageMember(members[1]),false);liveMember={role:'boss'};assert.ok(teamPage().includes('<option value="boss">Boss</option>'));liveMember={role:'team_lead'};assert.ok(!teamPage().includes('onsubmit="saveMember'));assert.equal(roleLabel('team_lead'),'Team lead');`,context);
+vm.runInContext(`liveMember={role:'hr'};members=[{email:'lead@example.test',name:'Lead',role:'team_lead',active:1},{email:'boss@example.test',name:'Boss',role:'boss',active:1,isOwner:true}];assert.ok(teamPage().includes('Delete user'));assert.ok(!teamPage().includes('<option value="boss">'));assert.equal(canManageMember(members[0]),true);assert.equal(canManageMember(members[1]),false);liveMember={role:'boss'};assert.ok(teamPage().includes('<option value="boss">Boss</option>'));liveMember={role:'team_lead'};assert.ok(!teamPage().includes('onsubmit="saveMember'));assert.equal(roleLabel('team_lead'),'Team lead');`,context);
 console.log('PASS: HR/Boss team access controls, exactly three role choices and team-lead management denial');
 
 vm.runInContext(`assert.ok(!settingsPage().includes('Recorded hire milestone'));const milestoneT=tickets.find(t=>t.candidates?.length),milestoneC=milestoneT.candidates[0];candidateOfferDialog(milestoneT.id,milestoneC.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('Recorded hire milestone'));assert.ok(document.querySelector('#dialog').innerHTML.includes('Employee has joined'));`,context);
@@ -147,3 +147,6 @@ assert.deepEqual(settings.positionCatalog,['Existing role']);
 settings.positionCatalog=originalCatalogue;settings.positionCatalogIds=originalCatalogueIds;
 `,context);
 console.log('PASS: catalogue detects new titles, prompts for each ID, confirms mappings and cancels without changing saved settings');
+
+vm.runInContext(`liveMember={role:'boss'};members=[{email:'removed@example.test',name:'Deleted User Fixture',role:'team_lead',active:0},{email:'active@example.test',name:'Active User Fixture',role:'team_lead',active:1}];const usersHTML=teamPage();assert.ok(!usersHTML.includes('Deleted User Fixture'));assert.ok(usersHTML.includes('Active User Fixture'));assert.ok(usersHTML.includes('deleteMember(1)'));assert.ok(!usersHTML.includes('Restore access'));`,context);
+console.log('PASS: deleted users disappear from the list; delete buttons retain correct member indexes');
