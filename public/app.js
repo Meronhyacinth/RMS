@@ -60,7 +60,7 @@ function addComment(e,id){e.preventDefault();const t=tickets.find(t=>t.id===id),
 function download(name,content,type){const a=document.createElement('a');const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function csvCell(s){let str=String(s??'');if(/^[=+@\-\t\r]/.test(str))str="'"+str;return '"'+str.replace(/"/g,'""')+'"'}
 function requestExportRows(){return [['Ticket ID','Position','Position group','Location','Business unit','Type','Status','Owner','Next action','Due date','Priority'],...ticketOrder(filtered()).map(t=>[t.id,t.title,t.positionGroup,t.location,t.bu,t.type,t.status,t.owner,t.next,t.due,t.priority])];}
-function exportExcel(){exportWorkbook('Recruit-Centinel-hiring-requests.xlsx',requestExportRows());}
+function exportExcel(){exportWorkbook('Recruit-Centinal-hiring-requests.xlsx',requestExportRows());}
 function exportCSV(){const rows=requestExportRows();download('RMS-hiring-requests.csv','\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8');toast('Request register exported')}
 function exportAudit(){download('RMS-audit-history.json',JSON.stringify(events(),null,2),'application/json')}
 function exportJSON(){download('RMS-demo-backup.json',JSON.stringify({tickets,settings},null,2),'application/json')}

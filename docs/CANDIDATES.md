@@ -1,6 +1,6 @@
 # Candidate records and interviews
 
-Recruit Centinels now stores candidate applications against each hiring request. HR manually enters applications received from JobStreet, Hiredly, email or another source; platform integration is not required.
+Recruit Centinals now stores candidate applications against each hiring request. HR manually enters applications received from JobStreet, Hiredly, email or another source; platform integration is not required.
 
 ## Staff access
 

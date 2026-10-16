@@ -34,16 +34,16 @@ Replaced font glyphs with a local Lucide SVG subset (26 icons), consistent 24-un
 
 Applied Taste's targeted existing-project audit and Finesse's component-scope consistency guidance. Existing GSAP matchMedia/reduced-motion behavior remains in place. Darwin concerns skill optimization; no skill files were modified. Codegraph remains ambiguous and no unavailable CLI run is claimed. Browser visual QA is unavailable in this managed environment; syntax, screen-rendering and production-build checks are performed.
 
-## Recruit Centinel identity
+## Recruit Centinal identity
 
-The product name is Recruit Centinel. Its lowercase, tightly spaced bold wordmark follows the supplied company reference; a matching rc monogram replaces the previous arrow logo. Lettering is converted to vector paths for consistent rendering without font dependencies. Navy and white SVG variants are bundled.
+The product name is Recruit Centinal. Its lowercase, tightly spaced bold wordmark follows the supplied company reference; a matching rc monogram replaces the previous arrow logo. Lettering is converted to vector paths for consistent rendering without font dependencies. Navy and white SVG variants are bundled.
 
 ## Restored product symbol
 
-The rejected rc initials have been replaced by the original C-and-forward-arrow symbol. The full Recruit Centinel wordmark now includes that symbol, with navy/white variants and a matching favicon.
+The rejected rc initials have been replaced by the original C-and-forward-arrow symbol. The full Recruit Centinal wordmark now includes that symbol, with navy/white variants and a matching favicon.
 
-## Approved Recruit Centinels logo
+## Approved Recruit Centinals logo
 
-The user supplied the approved blue C/person and Recruit centinels artwork. The PNG is preserved unchanged and displayed on a white backing for contrast on navy surfaces. A compact native SVG version of its C/person symbol serves the collapsed sidebar and favicon. The visible product name follows the supplied artwork: Recruit Centinels.
+The user supplied the approved blue C/person and Recruit centinels artwork. The PNG is preserved unchanged and displayed on a white backing for contrast on navy surfaces. A compact native SVG version of its C/person symbol serves the collapsed sidebar and favicon. The visible product name follows the supplied artwork: Recruit Centinals.
 
-The later uploaded Blue Recruit Centinels Logo(1).png replaces the previous opaque PNG unchanged. Transparency is preserved; light brand surfaces retain contrast for the navy lettering. Cache version transparent-8 ensures existing browsers fetch the replacement.
+The later uploaded Blue Recruit Centinals Logo(1).png replaces the previous opaque PNG unchanged. Transparency is preserved; light brand surfaces retain contrast for the navy lettering. Cache version transparent-8 ensures existing browsers fetch the replacement.

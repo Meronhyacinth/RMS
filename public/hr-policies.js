@@ -58,4 +58,4 @@ function visibleRecordSheets(){const ordered=ticketOrder(tickets);return [
  {name:'Interviews',rows:[['Ticket ID','Position','Candidate','Interviewer','Interview date','Manual arrangement','Feedback','Recommendation','Completed','Previous hiring cycle'],...ordered.flatMap(t=>(t.interviews||[]).map(i=>[t.id,t.title,i.candidate,i.interviewer,i.at,i.manual?'Yes':'No',i.feedback,i.recommendation,i.completedAt||i.feedbackAt,i.archived?'Yes':'No']))]},
  {name:'Activity',rows:[['Ticket ID','Position','Date and time','Recorded by','Update'],...ordered.flatMap(t=>(t.history||[]).map(h=>[t.id,t.title,h.at,h.actor,h.text]))]}
  ];}
-function exportVisibleRecords(){exportWorkbook('Recruit-Centinels-visible-records.xlsx',visibleRecordSheets());}
+function exportVisibleRecords(){exportWorkbook('Recruit-Centinals-visible-records.xlsx',visibleRecordSheets());}
