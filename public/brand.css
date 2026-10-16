@@ -148,3 +148,6 @@ input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offse
 /* Navigation labels fit the available sidebar width, including browser zoom. */
 aside nav{min-width:0;width:100%}aside nav button{min-width:0;max-width:100%;white-space:normal}aside nav button .navicon{flex:0 0 20px}aside nav button .navlabel{min-width:0;overflow-wrap:anywhere;line-height:1.4}aside nav button em{flex:none}
 .auth-brand{align-self:flex-start}.auth-brand .wordmark{max-width:100%;height:auto}.login-panel .login-mark{width:220px;max-width:100%;height:auto;object-fit:contain;padding:8px;background:transparent}
+
+/* Clear hierarchy within recruitment cards. */
+.ticket-card .id{font-size:13px}.ticket-card>p{font-size:12px!important}.ticket-card-status{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:12px}.ticket-card-status .priority-normal{white-space:nowrap}
