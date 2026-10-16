@@ -71,3 +71,76 @@ input[type="checkbox"]{appearance:auto;flex:0 0 18px;width:18px!important;height
 .check-field,label:has(>input[type="checkbox"]){display:flex;flex-direction:row;align-items:flex-start;align-self:center;gap:10px;min-width:0;font-size:14px;line-height:1.5;color:var(--ink);font-weight:500}
 .check-field>span{min-width:0;overflow-wrap:anywhere}
 input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+
+/* Warm light workspace, inspired by cream paper, citrus and apricot accents. */
+.warm-theme{--navy:#252d25;--ink:#30372e;--muted:#62695c;--blue:#354c38;--bg:#f3f0e8;--surface:#fffdf7;--line:#deddd0;--soft:#eeeedb;--teal:#3e7151;--shadow:0 3px 15px #48472408;background:var(--bg);color:var(--ink)}
+.warm-theme aside{background:#eef0d9;color:var(--ink);border-right:1px solid #dfe2c9}
+.warm-theme .brand{background:transparent}
+.warm-theme .workspace,.warm-theme .workspace span,.warm-theme .profile b{color:var(--ink)}
+.warm-theme .profile small{color:var(--muted)}
+.warm-theme .profile{border-color:#d3d8bd}
+.warm-theme .profile .avatar,.warm-theme .owner .avatar{background:#e1e7c3;color:#39482c;border-color:#d3d8bd}
+.warm-theme nav button{color:#505b45}
+.warm-theme aside nav button:hover:not(:disabled),.warm-theme aside nav button:focus-visible:not(:disabled){background:#e4e8b9;color:#252d25;border-color:transparent}
+.warm-theme aside nav button.active,.warm-theme aside nav button.active:hover:not(:disabled),.warm-theme aside nav button.active:focus-visible:not(:disabled){background:#edf16b;color:#252d25;font-weight:700}
+.warm-theme aside nav button:focus-visible:not(:disabled){outline-color:#596a39}
+.warm-theme nav button em{background:#3e4c32;color:#fff}
+.warm-theme .nav-divider{border-color:#d3d8bd}
+.warm-theme .help{background:#fafbf0;border-color:#d5dbbd;color:var(--ink)}
+.warm-theme .help p,.warm-theme .help button{color:#59654e}
+.warm-theme .help button:hover:not(:disabled){background:#e4e8b9;color:#252d25}
+.warm-theme header,.warm-theme .panel,.warm-theme dialog{background:var(--surface);border-color:var(--line)}
+.warm-theme .eyebrow,.warm-theme .id, .warm-theme footer{color:#666f5b}
+.warm-theme .primary{background:#354c38;border-color:#354c38;color:#fff}
+.warm-theme button.primary:hover:not(:disabled){background:#263e2b;border-color:#263e2b;color:#fff}
+.warm-theme button:hover:not(:disabled){background:#f0f0d7;border-color:#b6bf98}
+.warm-theme button.danger:hover:not(:disabled){background:#fee9e7;border-color:#cd6862;color:#a62227}
+.warm-theme .header-actions .iconbtn:hover{color:var(--ink)}
+.warm-theme .metric{background:var(--surface);border-color:#deddd0}
+.warm-theme .metrics>.metric:nth-child(1){background:#eff279;border-color:#e3e768}
+.warm-theme .metrics>.metric:nth-child(2){background:#ffc58e;border-color:#f1b47d}
+.warm-theme .metrics>.metric:nth-child(3){background:#e8eacf;border-color:#d7ddbb}
+.warm-theme .metrics>.metric:nth-child(4){background:#f9e9df;border-color:#ead5c6}
+.warm-theme .metric strong,.warm-theme .metric h2,.warm-theme .metric-top{color:#2d352a}
+.warm-theme .metric small{color:#55604a}
+.warm-theme .metric-icon,.warm-theme .metric.amber .metric-icon,.warm-theme .metric.teal .metric-icon,.warm-theme .metric.rose .metric-icon{background:#fffdf799;color:#465334}
+.warm-theme th{background:#efeee2;color:#59634f;border-color:var(--line)}
+.warm-theme td{border-color:#e6e3d6}
+.warm-theme tbody tr:hover{background:#f5f4e7}
+.warm-theme .table-foot{border-color:var(--line)}
+.warm-theme input,.warm-theme select,.warm-theme textarea{background:#fffefb;border-color:#cdcfbc;color:var(--ink)}
+.warm-theme input:focus,.warm-theme select:focus,.warm-theme textarea:focus{border-color:#839363;outline-color:#83936326}
+.warm-theme .notice,.warm-theme .request-work{background:#f0efdc;border-color:#d9d8bd;color:#566048}
+.warm-theme .notice.amber{background:#fff0d6;border-color:#e8cf9e;color:#80561e}
+.warm-theme .request-work .approval-step{border-color:var(--line);background:var(--surface)}
+.warm-theme .kanban-col{background:#eeeddf;border-color:#dedcc8}
+.warm-theme .ticket-card{background:var(--surface);border-color:#dddfcb}
+.warm-theme .candidate-position-bar,.warm-theme .candidate-upload{background:#f0efdc;border-color:#d9d8bd}
+.warm-theme .pill.gray{background:#eeece1;color:#626957}
+.warm-theme .pill.teal{background:#e4edce;color:#3e5b28}
+.warm-theme .pill.amber{background:#fce8c3;color:#805313}
+.warm-theme .pill.purple{background:#ebe6ef;color:#675579}
+.warm-theme .text-button{color:#47603e}
+.warm-theme .attention-icon{background:#ffebd4;color:#8c5b20}
+.warm-theme .dialog-alert{background:#f1f2d5;border-color:#bec795;color:#3b4d2d}
+.warm-theme .dialog-alert.error{background:#fff0f2;border-color:#dc3449;color:#a90c24}
+.warm-theme .pipe-col:nth-child(1) .pipe-bar{background:#a7b87b!important}
+.warm-theme .pipe-col:nth-child(2) .pipe-bar{background:#d4b155!important}
+.warm-theme .pipe-col:nth-child(3) .pipe-bar{background:#eed855!important}
+.warm-theme .pipe-col:nth-child(4) .pipe-bar{background:#eaa268!important}
+.warm-theme .pipe-col:nth-child(5) .pipe-bar{background:#c8b88a!important}
+.warm-theme .pipe-col:nth-child(6) .pipe-bar{background:#67976c!important}
+.warm-theme .pipe-col:nth-child(7) .pipe-bar{background:#d96d5d!important}
+.warm-theme.auth-view,.warm-theme .auth-form-side{background:var(--surface)}
+.warm-theme .auth-story{background:#e9edcc;color:#303c28}
+.warm-theme .story-content h1{color:#263426}
+.warm-theme .story-content p,.warm-theme .story-tag,.warm-theme .story-footer{color:#59634f}
+.warm-theme .story-route{color:#3e4c32}
+.warm-theme .story-route i{background:#a8b28a}
+.warm-theme .story-orbit,.warm-theme .story-orbit:before,.warm-theme .story-orbit:after{border-color:#84916320}
+.warm-theme .login-panel input{background:#fffefb;border-color:#cdcfbc}
+.warm-theme .login-panel input::placeholder{color:#737c69}
+.warm-theme .login-support,.warm-theme .login-support a{color:#626f55}
+#theme{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 10px;line-height:1.2;min-height:38px}
+#theme .rms-icon{width:18px;height:18px;flex:none}
+@media(max-width:640px){#theme span{display:none}}

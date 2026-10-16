@@ -78,3 +78,8 @@ function suggestPositionTeam(title,bu=''){const text=(title+' '+bu).toLowerCase(
 if(new URLSearchParams(location.search).has('demo')){let changed=false;for(const t of tickets){if(!positionTeams.includes(t.positionGroup)){t.positionGroup=suggestPositionTeam(t.title,t.bu);changed=true;}if(!['HQ','COE'].includes(t.location)){t.location=t.id.startsWith('COE-')?'COE':'HQ';changed=true;}}if(changed)save();}
 
 function priorityBadge(t){return t.priority==='High'?'<span class="priority-alert">High priority</span>':`<span class="priority-normal">${esc(t.priority||'Normal')} priority</span>`;}
+
+let currentTheme='blue';
+function applyTheme(value,persist=true){currentTheme=value==='warm'?'warm':'blue';document.body?.classList?.remove('dark','warm-theme');if(currentTheme==='warm')document.body?.classList?.add('warm-theme');const button=$('#theme'),next=currentTheme==='warm'?'Blue theme':'Warm light';if(button){button.innerHTML=icon('theme')+'<span>'+next+'</span>';button.setAttribute?.('aria-label','Switch to '+next.toLowerCase());button.setAttribute?.('title','Switch to '+next.toLowerCase());button.setAttribute?.('aria-pressed',String(currentTheme==='warm'));}if(persist)try{localStorage.setItem('rms-theme',currentTheme);}catch{}}
+function toggleTheme(){applyTheme(currentTheme==='warm'?'blue':'warm');}
+try{applyTheme(localStorage.getItem('rms-theme')||'blue',false);}catch{applyTheme('blue',false);}

@@ -96,6 +96,9 @@ vm.runInContext(`assert.ok(!settingsPage().includes('Recorded hire milestone'));
 
 vm.runInContext(`liveMember={role:'hr',email:'hr@example.test',username:'hr.user'};members=[{name:'Boss',email:'owner@example.test',username:'admin',role:'boss',active:1,isOwner:true,hasLogin:true}];assert.ok(teamPage().includes('Login username'));assert.ok(teamPage().includes('name="password"'));assert.ok(teamPage().includes('Edit login / password'));ownPasswordDialog();assert.ok(document.querySelector('#dialog').innerHTML.includes('Current password'));assert.ok(document.querySelector('#dialog').innerHTML.includes('Confirm new password'));staffPasswordDialog('owner@example.test');assert.ok(document.querySelector('#dialog').innerHTML.includes('Login username'));`,context);
 
+vm.runInContext(`const themeClasses=new Set(['dark']);document.body={classList:{remove:(...names)=>names.forEach(n=>themeClasses.delete(n)),add:n=>themeClasses.add(n)}};applyTheme('warm');assert.ok(themeClasses.has('warm-theme'));assert.ok(!themeClasses.has('dark'));assert.equal(localStorage.getItem('rms-theme'),'warm');toggleTheme();assert.ok(!themeClasses.has('warm-theme'));assert.equal(localStorage.getItem('rms-theme'),'blue');applyTheme('warm',false);assert.ok(document.querySelector('#theme').innerHTML.includes('Blue theme'));`,context);
+console.log('PASS: warm light theme replaces dark mode, toggles back to blue and saves the theme preference');
+
 vm.runInContext(`
 const pendingTimers=new Map();let timerId=0;globalThis.setTimeout=(fn,ms)=>{pendingTimers.set(++timerId,{fn,ms});return timerId};globalThis.clearTimeout=id=>pendingTimers.delete(id);
 let visibleDialogAlert=null;const toastDialog={open:true,querySelector:s=>s==='.dialog-alert'?visibleDialogAlert:s==='.modal-body'?{insertAdjacentHTML(){visibleDialogAlert={textContent:'',setAttribute(){},remove(){visibleDialogAlert=null}}}}:null};document.querySelector('#dialog');
