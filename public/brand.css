@@ -72,23 +72,23 @@ input[type="checkbox"]{appearance:auto;flex:0 0 18px;width:18px!important;height
 .check-field>span{min-width:0;overflow-wrap:anywhere}
 input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 
-/* Warm light workspace, inspired by cream paper, citrus and apricot accents. */
+/* Soft light workspace with muted sage, cream and peach accents. */
 .warm-theme{--navy:#252d25;--ink:#30372e;--muted:#62695c;--blue:#354c38;--bg:#f3f0e8;--surface:#fffdf7;--line:#deddd0;--soft:#eeeedb;--teal:#3e7151;--shadow:0 3px 15px #48472408;background:var(--bg);color:var(--ink)}
-.warm-theme aside{background:#eef0d9;color:var(--ink);border-right:1px solid #dfe2c9}
+.warm-theme aside{background:#edf0e8;color:var(--ink);border-right:1px solid #dde3d7}
 .warm-theme .brand{background:transparent}
 .warm-theme .workspace,.warm-theme .workspace span,.warm-theme .profile b{color:var(--ink)}
 .warm-theme .profile small{color:var(--muted)}
 .warm-theme .profile{border-color:#d3d8bd}
-.warm-theme .profile .avatar,.warm-theme .owner .avatar{background:#e1e7c3;color:#39482c;border-color:#d3d8bd}
+.warm-theme .profile .avatar,.warm-theme .owner .avatar{background:#e0e7d9;color:#39482c;border-color:#d3d8bd}
 .warm-theme nav button{color:#505b45}
-.warm-theme aside nav button:hover:not(:disabled),.warm-theme aside nav button:focus-visible:not(:disabled){background:#e4e8b9;color:#252d25;border-color:transparent}
-.warm-theme aside nav button.active,.warm-theme aside nav button.active:hover:not(:disabled),.warm-theme aside nav button.active:focus-visible:not(:disabled){background:#edf16b;color:#252d25;font-weight:700}
+.warm-theme aside nav button:hover:not(:disabled),.warm-theme aside nav button:focus-visible:not(:disabled){background:#e3e9dd;color:#252d25;border-color:transparent}
+.warm-theme aside nav button.active,.warm-theme aside nav button.active:hover:not(:disabled),.warm-theme aside nav button.active:focus-visible:not(:disabled){background:#dce5d4;color:#252d25;font-weight:700}
 .warm-theme aside nav button:focus-visible:not(:disabled){outline-color:#596a39}
 .warm-theme nav button em{background:#3e4c32;color:#fff}
 .warm-theme .nav-divider{border-color:#d3d8bd}
 .warm-theme .help{background:#fafbf0;border-color:#d5dbbd;color:var(--ink)}
 .warm-theme .help p,.warm-theme .help button{color:#59654e}
-.warm-theme .help button:hover:not(:disabled){background:#e4e8b9;color:#252d25}
+.warm-theme .help button:hover:not(:disabled){background:#e3e9dd;color:#252d25}
 .warm-theme header,.warm-theme .panel,.warm-theme dialog{background:var(--surface);border-color:var(--line)}
 .warm-theme .eyebrow,.warm-theme .id, .warm-theme footer{color:#666f5b}
 .warm-theme .primary{background:#354c38;border-color:#354c38;color:#fff}
@@ -97,10 +97,10 @@ input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offse
 .warm-theme button.danger:hover:not(:disabled){background:#fee9e7;border-color:#cd6862;color:#a62227}
 .warm-theme .header-actions .iconbtn:hover{color:var(--ink)}
 .warm-theme .metric{background:var(--surface);border-color:#deddd0}
-.warm-theme .metrics>.metric:nth-child(1){background:#eff279;border-color:#e3e768}
-.warm-theme .metrics>.metric:nth-child(2){background:#ffc58e;border-color:#f1b47d}
-.warm-theme .metrics>.metric:nth-child(3){background:#e8eacf;border-color:#d7ddbb}
-.warm-theme .metrics>.metric:nth-child(4){background:#f9e9df;border-color:#ead5c6}
+.warm-theme .metrics>.metric:nth-child(1){background:#e6ebdc;border-color:#d8dfcf}
+.warm-theme .metrics>.metric:nth-child(2){background:#f2e4d9;border-color:#e7d7ca}
+.warm-theme .metrics>.metric:nth-child(3){background:#e5ebe7;border-color:#d5dfd8}
+.warm-theme .metrics>.metric:nth-child(4){background:#eee7e5;border-color:#e2d8d5}
 .warm-theme .metric strong,.warm-theme .metric h2,.warm-theme .metric-top{color:#2d352a}
 .warm-theme .metric small{color:#55604a}
 .warm-theme .metric-icon,.warm-theme .metric.amber .metric-icon,.warm-theme .metric.teal .metric-icon,.warm-theme .metric.rose .metric-icon{background:#fffdf799;color:#465334}
@@ -124,15 +124,15 @@ input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offse
 .warm-theme .attention-icon{background:#ffebd4;color:#8c5b20}
 .warm-theme .dialog-alert{background:#f1f2d5;border-color:#bec795;color:#3b4d2d}
 .warm-theme .dialog-alert.error{background:#fff0f2;border-color:#dc3449;color:#a90c24}
-.warm-theme .pipe-col:nth-child(1) .pipe-bar{background:#a7b87b!important}
-.warm-theme .pipe-col:nth-child(2) .pipe-bar{background:#d4b155!important}
-.warm-theme .pipe-col:nth-child(3) .pipe-bar{background:#eed855!important}
-.warm-theme .pipe-col:nth-child(4) .pipe-bar{background:#eaa268!important}
-.warm-theme .pipe-col:nth-child(5) .pipe-bar{background:#c8b88a!important}
-.warm-theme .pipe-col:nth-child(6) .pipe-bar{background:#67976c!important}
-.warm-theme .pipe-col:nth-child(7) .pipe-bar{background:#d96d5d!important}
+.warm-theme .pipe-col:nth-child(1) .pipe-bar{background:#aab9a4!important}
+.warm-theme .pipe-col:nth-child(2) .pipe-bar{background:#bfb396!important}
+.warm-theme .pipe-col:nth-child(3) .pipe-bar{background:#cdc5a1!important}
+.warm-theme .pipe-col:nth-child(4) .pipe-bar{background:#cfb19b!important}
+.warm-theme .pipe-col:nth-child(5) .pipe-bar{background:#b9b1a5!important}
+.warm-theme .pipe-col:nth-child(6) .pipe-bar{background:#87a693!important}
+.warm-theme .pipe-col:nth-child(7) .pipe-bar{background:#c18e87!important}
 .warm-theme.auth-view,.warm-theme .auth-form-side{background:var(--surface)}
-.warm-theme .auth-story{background:#e9edcc;color:#303c28}
+.warm-theme .auth-story{background:#e9eee4;color:#303c28}
 .warm-theme .story-content h1{color:#263426}
 .warm-theme .story-content p,.warm-theme .story-tag,.warm-theme .story-footer{color:#59634f}
 .warm-theme .story-route{color:#3e4c32}
@@ -141,6 +141,6 @@ input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offse
 .warm-theme .login-panel input{background:#fffefb;border-color:#cdcfbc}
 .warm-theme .login-panel input::placeholder{color:#737c69}
 .warm-theme .login-support,.warm-theme .login-support a{color:#626f55}
-#theme{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 10px;line-height:1.2;min-height:38px}
+#theme{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:9px;flex:none}
 #theme .rms-icon{width:18px;height:18px;flex:none}
-@media(max-width:640px){#theme span{display:none}}
+

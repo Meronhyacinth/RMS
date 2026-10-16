@@ -50,4 +50,4 @@ Success messages inside dialogs disappear after 3.5 seconds; error messages expi
 - HR and Boss can use Edit login / password for every active account, including HR/Boss and the protected owner. This does not grant HR permission to change HR/Boss roles or remove the protected owner.
 - The initial admin username continues to work. Once its password is changed inside the system, the database password overrides the original environment password. Another HR/Boss can reset it. The environment hash alone no longer overrides an existing stored account password.
 
-- The theme switch offers the existing Blue theme and a Warm light theme inspired by cream, pale citrus and apricot colours. It replaces the dark-mode option and remembers the choice in the current browser.
+- The icon-only theme switch offers the existing Blue theme and a Soft light theme with muted sage, cream and peach colours. It replaces the dark-mode option and remembers the choice in the current browser.
