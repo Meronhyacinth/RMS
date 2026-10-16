@@ -1,7 +1,7 @@
 # HR workflow update
 
 - HR approves hiring. Existing pending multi-person approval routes become a single HR step; completed historical decisions remain in history.
-- Requestors enter HOD name (required) and HOD email (optional). A registered HOD with the matching email can review candidates for that position. HR enters salary range and funding details during review. Job grade is optional.
+- Requestors enter HOD name (required) and HOD email (optional). A registered HOD with the matching email can review candidates for that position. Requestors may suggest an optional salary range. HR reviews and can adjust the prefilled range, with the original suggestion shown for reference. Funding details remain HR-managed. Job grade is optional.
 - Salary maximum tracks the entered minimum when empty or lower. The server rejects maximums below minimum. Errors inside dialogs are shown inside the dialog, above the backdrop.
 - HR can edit open hiring position details without restarting the workflow. An additional HR salary/budget edit action is available while open. Requesters retain draft/clarification-only editing.
 - Recording a hire does not close a position. Filled is an open state; HR can continue hiring or manually close the position. HR may increase vacancies when continuing hiring.

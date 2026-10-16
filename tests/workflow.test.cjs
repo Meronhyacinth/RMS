@@ -86,7 +86,7 @@ window.confirm=()=>true;await deleteCandidateDocument(t.id,c.id,c.documents.at(-
 const appSource=fs.readFileSync(__dirname+'/../public/app.js','utf8');
 const newRequestSource=appSource.slice(appSource.indexOf('function newRequest('),appSource.indexOf('function conditional('));
 assert.ok(!newRequestSource.includes("'salaryMin'"));assert.ok(!newRequestSource.includes("'salaryMax'"));assert.ok(!newRequestSource.includes("'costCentre'"));
-vm.runInContext(`const financeHTML=hrFinanceFields({});assert.ok(financeHTML.includes('name="salaryMin"'));assert.ok(financeHTML.includes('name="costCentre"'));console.log('PASS: new request omits financial inputs; HR review includes them');`,context);
+vm.runInContext(`const financeHTML=hrFinanceFields({});assert.ok(financeHTML.includes('name="salaryMin"'));assert.ok(financeHTML.includes('name="costCentre"'));console.log('PASS: request omits HR-only budget fields; HR review includes them');`,context);
 
 vm.runInContext(fs.readFileSync(__dirname+'/../public/hr-policies.js','utf8'),context);
 vm.runInContext(`
@@ -153,3 +153,6 @@ console.log('PASS: deleted users disappear from the list; delete buttons retain 
 
 vm.runInContext(`const previousTickets=tickets,previousSettings=settings;tickets=[];settings={...settings,positionCatalog:['New Catalogue Fixture'],positionCatalogIds:{'New Catalogue Fixture':'ASD123'}};assert.ok(settingsPage().includes('Manage position details'));assert.ok(managedPositionsHTML().includes('New Catalogue Fixture'));assert.ok(managedPositionsHTML().includes('ASD123'));editCataloguePosition('New Catalogue Fixture');assert.ok(document.querySelector('#dialog').innerHTML.includes('value="ASD123"'));tickets=[{id:'ASD123',title:'New Catalogue Fixture',status:'Draft'}];assert.equal(managedPositionsHTML().split('<strong>New Catalogue Fixture</strong>').length-1,1);tickets=previousTickets;settings=previousSettings;`,context);
 console.log('PASS: saved catalogue positions appear without hiring requests and merge with existing tickets without duplicate rows');
+
+vm.runInContext(`const suggestedSalary={requestedSalaryMin:4500,requestedSalaryMax:6500};const requesterFields=requesterSalaryFields(suggestedSalary);assert.ok(requesterFields.includes('name="requestedSalaryMin"'));assert.ok(requesterFields.includes('value="4500"'));const hrSuggested=hrFinanceFields(suggestedSalary);assert.ok(hrSuggested.includes('value="4500"'));assert.ok(hrSuggested.includes('value="6500"'));const hrAdjusted=hrFinanceFields({...suggestedSalary,salaryMin:5000,salaryMax:7000});assert.ok(hrAdjusted.includes('value="5000"'));assert.ok(hrAdjusted.includes('4500 – 6500'));assert.ok(requesterSalaryError({requestedSalaryMin:5000,requestedSalaryMax:4000}));assert.equal(requesterSalaryError({requestedSalaryMin:'',requestedSalaryMax:''}),'');`,context);
+console.log('PASS: optional requester salary fields prefill HR review and keep original suggestions visible after HR changes');

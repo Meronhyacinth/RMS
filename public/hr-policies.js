@@ -1,5 +1,5 @@
 'use strict';
-function syncSalaryBounds(form){const lo=form.elements.namedItem('salaryMin'),hi=form.elements.namedItem('salaryMax');if(!lo||!hi)return;hi.min=lo.value||'0';if(lo.value!==''&&(hi.value===''||+hi.value<+lo.value))hi.value=lo.value;}
+function syncSalaryBounds(form,minName='salaryMin',maxName='salaryMax'){const lo=form.elements.namedItem(minName),hi=form.elements.namedItem(maxName);if(!lo||!hi)return;hi.min=lo.value||'0';if(lo.value!==''&&(hi.value===''||+hi.value<+lo.value))hi.value=lo.value;}
 const policyToast=toast;let dialogToastTimer;
 toast=function(message,type='info'){policyToast(message);globalThis.clearTimeout?.(dialogToastTimer);const d=$('#dialog');if(d.open&&d.querySelector){let a=d.querySelector('.dialog-alert');if(!a){d.querySelector('.modal-body')?.insertAdjacentHTML('afterbegin','<div class="dialog-alert" role="status"></div>');a=d.querySelector('.dialog-alert');}if(a){a.className='dialog-alert '+(type==='error'?'error':'');a.setAttribute?.('role',type==='error'?'alert':'status');a.textContent=message;dialogToastTimer=setTimeout(()=>a.remove?.(),type==='error'?10000:3500);}}};
 const policyDetail=detail;
