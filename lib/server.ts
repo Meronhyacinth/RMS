@@ -93,7 +93,11 @@ export async function handle(req:Request){try{
   const headers=new Headers({'Cache-Control':'no-store'});headers.append('Set-Cookie',await sessionCookie({email:m.email,name:m.name,version:saved.version}));return Response.json({ok:true},{headers});
  }
  if(path==='staff-password'){
-  requireHR(m);const email=clean(body.email).toLowerCase();if(!await activeMember(email))fail('Select an active member.');const q=await credentialsQuery(email,body.password,body.username);await db().batch([q,credentialAudit(m,'Login credentials updated: '+email)]);return credentialResult(m,email);
+  requireHR(m);const email=clean(body.email).toLowerCase(),target=await activeMember(email);if(!target)fail('Select an active member.');const queries:any[]=[];let name=target.name;
+  if(body.profile!==undefined){const profile=body.profile;if(!profile||typeof profile!=='object')fail('Enter valid account details.');name=clean(profile.name,100);const bu=clean(profile.bu,100),role=profile.role;if(!name||!['team_lead','hr','boss'].includes(role))fail('Enter a name and valid role.');if(m.role==='hr'&&(target.role!=='team_lead'||role!=='team_lead')&&(name!==target.name||bu!==(target.bu||'')||role!==target.role))fail('HR can edit profile details for team leads only.',403);if(email===OWNER_EMAIL&&role!=='boss')fail('The Site owner must remain an active boss.');queries.push(stmt('UPDATE members SET name=?,bu=?,role=? WHERE email=?',name,bu,role,email));}
+  const login=await stmt('SELECT username FROM staff_logins WHERE email=?',email).first<any>();const bootstrapUnchanged=body.profile!==undefined&&!login&&email===OWNER_EMAIL&&!body.password&&clean(body.username).toLowerCase()==='admin';
+  if(!bootstrapUnchanged)queries.push(await credentialsQuery(email,body.password,body.username));
+  queries.push(credentialAudit(m,'Account details and login updated: '+email));await db().batch(queries);return bootstrapUnchanged?json({ok:true}):credentialResult({...m,...(m.email===email?{name}:{})},email);
  }
  if(path==='members'){
   requireHR(m);const email=clean(body.email).toLowerCase();const existing=await stmt('SELECT role FROM members WHERE email=?',email).first<any>();if(m.role==='hr'&&(body.role!=='team_lead'||(existing&&existing.role!=='team_lead')))fail('HR can add or remove team leads only.',403);if(!validEmail(email)||!['team_lead','hr','boss'].includes(body.role)||!clean(body.name))fail('Enter a name, email and valid role.');

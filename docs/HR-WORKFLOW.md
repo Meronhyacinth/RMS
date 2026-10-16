@@ -53,3 +53,5 @@ Success messages inside dialogs disappear after 3.5 seconds; error messages expi
 - The top-bar appearance menu offers System default, Light, Dark and Soft. New browsers follow the operating system; saved choices remain in effect. System mode responds to operating-system colour changes.
 
 - Saving the position catalogue prompts for a unique custom Ticket ID (for example `ASD123`) for each new title. Cancel leaves the saved catalogue unchanged. Assigned IDs appear below the list and persist in shared settings. The first request for the title uses that ID; later requests receive unique sequential IDs. Existing titles can be saved without assigning IDs retroactively.
+
+- Team access uses one Edit account dialog for profile and credentials, including the owner account. Profile and credential updates save together. Existing role protections remain in effect. New staff emails use the fixed @cllsystems.com suffix.
