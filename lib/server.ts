@@ -17,7 +17,7 @@ async function member(req:Request){
  // Only the verified Site owner can bootstrap administration; first visitor is never an admin.
  if(email===OWNER_EMAIL)await stmt('INSERT OR IGNORE INTO members (email,user_id,name,role,bu,active) VALUES (?,?,?,?,?,1)',email,u!.userId,u!.displayName,'boss','').run();
  const m=await stmt('SELECT * FROM members WHERE email=? AND active=1',email).first<Member>();
- if(passwordMode&&(u as any).authVersion!==undefined){const login=await stmt('SELECT version FROM staff_logins WHERE email=?',email).first<any>();if(!login||login.version!==(u as any).authVersion)fail('Your password changed. Please sign in again.',401);}
+ if(passwordMode){const login=await stmt('SELECT version FROM staff_logins WHERE email=?',email).first<any>();if(((u as any).authVersion!==undefined&&(!login||login.version!==(u as any).authVersion))||((u as any).authVersion===undefined&&login))fail('Your password changed. Please sign in again.',401);}
  if(!m||!['team_lead','hr','boss'].includes(m.role))fail('Your account has not been added to RMS. Ask the workspace administrator for access.',403);
  if(!passwordMode&&m!.user_id&&m!.user_id!==u!.userId)fail('Account identity does not match membership.',403);
  if(!m!.user_id)await stmt('UPDATE members SET user_id=? WHERE email=? AND user_id IS NULL',u!.userId,email).run();
@@ -53,9 +53,9 @@ export async function handle(req:Request){try{
   if(row&&now-row.window_start<900&&row.attempts>=10)fail('Too many login attempts. Try again in 15 minutes.',429);
   await stmt('INSERT INTO login_limits (key,attempts,window_start) VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET attempts=CASE WHEN ?-window_start>=900 THEN 1 ELSE attempts+1 END,window_start=CASE WHEN ?-window_start>=900 THEN ? ELSE window_start END',ipKey,now,now,now,now).run();
   const input=await req.json() as any,username=clean(input.username,254).toLowerCase();
-  const staff=username==='admin'?null:await stmt('SELECT l.password_hash,l.version,m.email,m.name,m.active FROM staff_logins l JOIN members m ON m.email=l.email WHERE l.email=?',username).first<any>();
-  const valid=typeof input.password==='string'&&input.password.length<=256&&await verifyPassword(input.password,username==='admin'?undefined:staff?.password_hash||'invalid');
-  if(!valid||(username!=='admin'&&(!staff||!staff.active)))fail('Incorrect username or password.',401);
+  const staff=await stmt('SELECT l.password_hash,l.version,m.email,m.name,m.active FROM staff_logins l JOIN members m ON m.email=l.email WHERE '+(username==='admin'?'l.email=?':'l.email=? OR l.username=?'),...(username==='admin'?[OWNER_EMAIL]:[username,username])).first<any>();
+  const valid=typeof input.password==='string'&&input.password.length<=256&&await verifyPassword(input.password,staff?.password_hash||(username==='admin'?undefined:'invalid'));
+  if(!valid||(staff&&!staff.active)||(username!=='admin'&&!staff))fail('Incorrect username or password.',401);
   await stmt('DELETE FROM login_limits WHERE key=?',ipKey).run();
   const headers=new Headers({'Cache-Control':'no-store'});headers.append('Set-Cookie',clearLegacyCookie());headers.append('Set-Cookie',await sessionCookie(staff?{email:staff.email,name:staff.name,version:staff.version}:undefined));return Response.json({ok:true},{headers});
  }
@@ -64,9 +64,9 @@ export async function handle(req:Request){try{
  if(req.method==='GET'&&path==='workspace'){
   const rows=await stmt('SELECT data,version FROM tickets ORDER BY id DESC').all<any>();
   const ts=rows.results.map(r=>({...JSON.parse(r.data),version:r.version})).filter(t=>canView(m,t)).map(t=>safeTicket(t,m));
-  const people=await stmt(isHR(m)?'SELECT email,name,role,bu,active FROM members ORDER BY name':'SELECT email,name,role,bu,active FROM members WHERE active=1 ORDER BY name').all();
+  const people=await stmt('SELECT m.email,m.name,m.role,m.bu,m.active,l.username,CASE WHEN l.email IS NOT NULL THEN 1 ELSE 0 END AS hasLogin FROM members m LEFT JOIN staff_logins l ON l.email=m.email '+(isHR(m)?'':'WHERE m.active=1 ')+'ORDER BY m.name').all();
   const notices=await stmt('SELECT * FROM notices WHERE email=? ORDER BY at DESC LIMIT 150',m.email).all();
-  return json({member:m,settings:s,tickets:ts,members:people.results.map((person:any)=>({...person,isOwner:person.email===OWNER_EMAIL})),notices:notices.results.filter((n:any)=>ts.some(t=>t.id===n.ticket_id))});
+  const ownLogin=await stmt('SELECT username FROM staff_logins WHERE email=?',m.email).first<any>();return json({member:{...m,username:ownLogin?.username||(m.email===OWNER_EMAIL?'admin':m.email)},settings:s,tickets:ts,members:people.results.map((person:any)=>({...person,username:person.username||(person.email===OWNER_EMAIL?'admin':person.email),hasLogin:person.hasLogin||person.email===OWNER_EMAIL,isOwner:person.email===OWNER_EMAIL})),notices:notices.results.filter((n:any)=>ts.some(t=>t.id===n.ticket_id))});
  }
  if(req.method==='GET'&&path.startsWith('files/')){
   const f=await stmt('SELECT * FROM files WHERE id=?',path.slice(6)).first<any>();if(!f)fail('Attachment not found.',404);const {t}=await getTicket(f.ticket_id,m);if(f.candidate_id&&!isHR(m)&&(t.candidates||[]).find((c:any)=>c.id===f.candidate_id)?.documents?.some((d:any)=>d.id===f.id&&d.kind==='Offer letter'))fail('Offer letters are available to HR and Boss only.',403);if(f.candidate_id&&!canViewCandidate(m,t,f.candidate_id))fail('This candidate document is not assigned to you.',403);
@@ -84,14 +84,22 @@ export async function handle(req:Request){try{
   return json({ok:true});
  }
  const body=await req.json() as any;
+ if(path==='change-password'){
+  if(!passwordLoginEnabled())fail('Password sign-in is not configured.');const login=await stmt('SELECT * FROM staff_logins WHERE email=?',m.email).first<any>();
+  if(typeof body.currentPassword!=='string'||body.currentPassword.length>256||!await verifyPassword(body.currentPassword,login?.password_hash||(m.email===OWNER_EMAIL?undefined:'invalid')))fail('Current password is incorrect.',403);
+  if(typeof body.password!=='string'||body.password.length<12||body.password.length>256)fail('Use a password of 12–256 characters.');if(body.password!==body.confirmPassword)fail('New passwords do not match.');
+  const q=await credentialsQuery(m.email,body.password,login?.username,login?.version??null);const result=await db().batch([q]);if(!result[0].meta.changes)fail('Your credentials changed in another session. Sign in again.',409);await credentialAudit(m,'Own password changed').run();const saved={version:(login?.version||0)+1};
+  const headers=new Headers({'Cache-Control':'no-store'});headers.append('Set-Cookie',await sessionCookie({email:m.email,name:m.name,version:saved.version}));return Response.json({ok:true},{headers});
+ }
  if(path==='staff-password'){
-  requireHR(m);const email=clean(body.email).toLowerCase();const target=await activeMember(email);if(m.role==='hr'&&target?.role!=='team_lead')fail('HR can set passwords for team leads only.',403);if(email===OWNER_EMAIL)fail('The bootstrap admin password is managed in server settings.');if(!await activeMember(email))fail('Select an active staff member.');if(typeof body.password!=='string'||body.password.length<12||body.password.length>256)fail('Use a password of 12–256 characters.');const hash=await hashPassword(body.password);await stmt('INSERT INTO staff_logins (email,password_hash,version) VALUES (?,?,1) ON CONFLICT(email) DO UPDATE SET password_hash=excluded.password_hash,version=staff_logins.version+1',email,hash).run();await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Staff password reset: '+email).run();return json({ok:true});
+  requireHR(m);const email=clean(body.email).toLowerCase();if(!await activeMember(email))fail('Select an active member.');const q=await credentialsQuery(email,body.password,body.username);await db().batch([q,credentialAudit(m,'Login credentials updated: '+email)]);return credentialResult(m,email);
  }
  if(path==='members'){
   requireHR(m);const email=clean(body.email).toLowerCase();const existing=await stmt('SELECT role FROM members WHERE email=?',email).first<any>();if(m.role==='hr'&&(body.role!=='team_lead'||(existing&&existing.role!=='team_lead')))fail('HR can add or remove team leads only.',403);if(!validEmail(email)||!['team_lead','hr','boss'].includes(body.role)||!clean(body.name))fail('Enter a name, email and valid role.');
   if(email===OWNER_EMAIL&&(body.role!=='boss'||body.active===false))fail('The Site owner must remain an active boss.');
-  await stmt('INSERT INTO members (email,name,role,bu,active) VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name,role=excluded.role,bu=excluded.bu,active=excluded.active',email,clean(body.name,100),body.role,clean(body.bu,100),body.active===false?0:1).run();
-  await stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,'Membership updated: '+email+' / '+body.role).run();return json({ok:true});
+  const credential=body.password||body.username!==undefined?await credentialsQuery(email,body.password,body.username):null;
+  const q=stmt('INSERT INTO members (email,name,role,bu,active) VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name,role=excluded.role,bu=excluded.bu,active=excluded.active',email,clean(body.name,100),body.role,clean(body.bu,100),body.active===false?0:1);
+  await db().batch([q,...(credential?[credential]:[]),credentialAudit(m,'Membership updated: '+email+' / '+body.role)]);return credential?credentialResult(m,email):json({ok:true});
  }
  if(path==='settings'){
   requireHR(m);
@@ -215,3 +223,17 @@ function closePosition(t:Ticket,m:Member,s:any,input:any){if(!['Filled','Withdra
 function applyHRFinance(t:Ticket,f:any){if(!f)fail('Enter HR salary and budget details.');if(f.salaryMin===''||f.salaryMax===''||f.salaryMin==null||f.salaryMax==null||!Number.isFinite(+f.salaryMin)||!Number.isFinite(+f.salaryMax)||+f.salaryMin<0||+f.salaryMax<+f.salaryMin||!['Budgeted','Unbudgeted','TBD'].includes(f.budget)||!clean(f.costCentre,200))fail('Enter a valid salary range (maximum must be at least minimum), funding status and cost centre.');Object.assign(t,{salaryMin:+f.salaryMin,salaryMax:+f.salaryMax,budget:f.budget,costCentre:clean(f.costCentre,200)});}
 
 function syncCandidateStage(t:Ticket){if(terminal.includes(t.status)||t.status==='On Hold')return;const cs=t.candidates||[];if((t.filledCount||0)>=t.vacancies)t.status='Filled';else if(cs.some((c:any)=>c.status==='Offer'&&['Sent','Accepted'].includes(c.offerResponse)))t.status='Offer Pending';else if(cs.some((c:any)=>c.status==='Offer'))t.status='Offer Preparation';else if(cs.some((c:any)=>c.status==='Interview'||c.interviewRequested))t.status='Interview';else t.status='Sourcing';t.next=nextFor(t.status);}
+
+function credentialAudit(m:Member,text:string){return stmt('INSERT INTO events (id,ticket_id,at,actor,actor_id,text) VALUES (?,?,?,?,?,?)',crypto.randomUUID(),'WORKSPACE',new Date().toISOString(),m.name,m.user_id,text);}
+async function credentialsQuery(email:string,password:any,requestedUsername?:any,expectedVersion?:number|null){
+ const existing=await stmt('SELECT username,password_hash,version FROM staff_logins WHERE email=?',email).first<any>();const username=clean(requestedUsername||existing?.username||(email===OWNER_EMAIL?'admin':email),254).toLowerCase();
+ if(username!==email&&!/^[a-z0-9][a-z0-9._-]{2,63}$/.test(username))fail('Use 3–64 letters, numbers, dots, underscores or hyphens for the username.');if(username==='admin'&&email!==OWNER_EMAIL)fail('The username admin is reserved.');
+ if(await stmt('SELECT email FROM staff_logins WHERE username=? COLLATE NOCASE AND email<>?',username,email).first())fail('That username is already in use.');
+ if(password!==undefined&&password!==''&&(typeof password!=='string'||password.length<12||password.length>256))fail('Use a password of 12–256 characters.');if(!password&&!existing)fail('Set a password for this account.');
+ const hash=password?await hashPassword(password):existing!.password_hash;
+ if(expectedVersion===null)return stmt('INSERT OR IGNORE INTO staff_logins (email,username,password_hash,version) VALUES (?,?,?,1)',email,username,hash);
+ if(expectedVersion!==undefined)return stmt('UPDATE staff_logins SET username=?,password_hash=?,version=version+1 WHERE email=? AND version=?',username,hash,email,expectedVersion);
+ return stmt('INSERT INTO staff_logins (email,username,password_hash,version) VALUES (?,?,?,1) ON CONFLICT(email) DO UPDATE SET username=excluded.username,password_hash=excluded.password_hash,version=staff_logins.version+CASE WHEN staff_logins.username IS NOT excluded.username OR staff_logins.password_hash<>excluded.password_hash THEN 1 ELSE 0 END',email,username,hash);
+}
+
+async function credentialResult(m:Member,email:string){if(m.email!==email||!passwordLoginEnabled())return json({ok:true});const login=await stmt('SELECT version FROM staff_logins WHERE email=?',email).first<any>();const headers=new Headers({'Cache-Control':'no-store'});headers.append('Set-Cookie',await sessionCookie({email:m.email,name:m.name,version:login.version}));return Response.json({ok:true},{headers});}

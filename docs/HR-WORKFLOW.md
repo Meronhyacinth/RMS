@@ -42,3 +42,10 @@ Success messages inside dialogs disappear after 3.5 seconds; error messages expi
 - Download visible records produces an Excel workbook with Hiring requests, Candidates, Interviews and Activity sheets. Each sheet has column filters, a frozen header and content-sized columns; records are sorted by ticket ID. It exports the records already permitted for the signed-in user, not attachment file contents.
 
 - Reports focus on open positions, candidate applications, hires and withdrawals, grouped by business unit, recruiter, position group and location. Request ageing/approval-duration tables and timing columns are removed from the report and its export.
+
+## Login credentials
+
+- Team Access supports entering a username and password together when adding a member. Usernames are case-insensitive and unique; existing email logins remain valid. Only password hashes are stored.
+- All roles can use Change my password with their current password and matching new-password confirmation. Other sessions are invalidated and the current session is renewed.
+- HR and Boss can use Edit login / password for every active account, including HR/Boss and the protected owner. This does not grant HR permission to change HR/Boss roles or remove the protected owner.
+- The initial admin username continues to work. Once its password is changed inside the system, the database password overrides the original environment password. Another HR/Boss can reset it. The environment hash alone no longer overrides an existing stored account password.
