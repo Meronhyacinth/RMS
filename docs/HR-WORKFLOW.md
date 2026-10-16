@@ -52,4 +52,4 @@ Success messages inside dialogs disappear after 3.5 seconds; error messages expi
 
 - The icon-only theme switch offers the existing Blue theme and a Soft light theme with muted sage, cream and peach colours. It replaces the dark-mode option and remembers the choice in the current browser.
 
-- Saving the position catalogue prompts for a unique `COE-001` / `HQ-001` Ticket ID for each new title. Cancel leaves the saved catalogue unchanged. Assigned IDs appear below the list and persist in shared settings. The first request for the title uses that ID; later requests receive unique sequential IDs. Existing titles can be saved without assigning IDs retroactively.
+- Saving the position catalogue prompts for a unique custom Ticket ID (for example `ASD123`) for each new title. Cancel leaves the saved catalogue unchanged. Assigned IDs appear below the list and persist in shared settings. The first request for the title uses that ID; later requests receive unique sequential IDs. Existing titles can be saved without assigning IDs retroactively.

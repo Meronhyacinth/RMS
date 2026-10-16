@@ -139,8 +139,8 @@ const catalogueForm={elements:{namedItem:()=>({value:'Existing role\\nNew engine
 const catalogueResult=preparePositionCatalogue(catalogueForm);
 assert.ok(document.querySelector('#dialog').innerHTML.includes('Ticket IDs for new positions'));
 assert.equal(pendingCatalogue.added.length,2);
-confirmCatalogueIds({preventDefault(){},target:{reportValidity:()=>true,elements:{namedItem:name=>({value:name==='catalogId0'?'COE-850':'HQ-850'})}}});
-catalogueResult.then(data=>{assert.equal(data.positionCatalogIds['New engineer'],'COE-850');assert.equal(data.positionCatalogIds['New sales'],'HQ-850');});
+confirmCatalogueIds({preventDefault(){},target:{reportValidity:()=>true,elements:{namedItem:name=>({value:name==='catalogId0'?'ASD123':'HQ-850'})}}});
+catalogueResult.then(data=>{assert.equal(data.positionCatalogIds['New engineer'],'ASD123');assert.equal(data.positionCatalogIds['New sales'],'HQ-850');});
 const cancelledCatalogue=preparePositionCatalogue(catalogueForm);cancelCatalogueIds();cancelledCatalogue.then(data=>assert.equal(data,null));
 assert.deepEqual(settings.positionCatalog,['Existing role']);
 settings.positionCatalog=originalCatalogue;settings.positionCatalogIds=originalCatalogueIds;
