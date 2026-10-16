@@ -87,10 +87,16 @@ if(rmsDemoMode){let changed=false;for(const t of tickets){if(!positionTeams.incl
 
 function priorityBadge(t){return t.priority==='High'?'<span class="priority-alert">High priority</span>':`<span class="priority-normal">${esc(t.priority||'Normal')} priority</span>`;}
 
-let currentTheme='blue';
-function applyTheme(value,persist=true){currentTheme=value==='warm'?'warm':'blue';document.body?.classList?.remove('dark','warm-theme');if(currentTheme==='warm')document.body?.classList?.add('warm-theme');const button=$('#theme'),next=currentTheme==='warm'?'Blue theme':'Soft light theme';if(button){button.innerHTML=icon('theme');button.setAttribute?.('aria-label','Switch to '+next.toLowerCase());button.setAttribute?.('title','Switch to '+next.toLowerCase());button.setAttribute?.('aria-pressed',String(currentTheme==='warm'));}if(persist)try{localStorage.setItem('rms-theme',currentTheme);}catch{}}
-function toggleTheme(){applyTheme(currentTheme==='warm'?'blue':'warm');}
-try{applyTheme(localStorage.getItem('rms-theme')||'blue',false);}catch{applyTheme('blue',false);}
+const themeOptions=[['system','System default'],['blue','Light'],['dark','Dark'],['warm','Soft']];
+const systemThemeQuery=window.matchMedia?.('(prefers-color-scheme: dark)');
+let currentTheme='system';
+function applyTheme(value,persist=true){currentTheme=themeOptions.some(([key])=>key===value)?value:'system';const resolved=currentTheme==='system'?(systemThemeQuery?.matches?'dark':'blue'):currentTheme;document.body?.classList?.remove('dark','warm-theme');if(resolved==='dark')document.body?.classList?.add('dark');if(resolved==='warm')document.body?.classList?.add('warm-theme');const button=$('#theme');if(button){button.innerHTML=icon('theme');button.setAttribute?.('aria-label','Appearance settings');button.setAttribute?.('title','Appearance settings');button.removeAttribute?.('aria-pressed');}const options=$('#theme-options');if(options)options.innerHTML=themeOptions.map(([key,label])=>`<button type="button" class="theme-option ${key===currentTheme?'selected':''}" aria-pressed="${key===currentTheme}" onclick="chooseTheme('${key}')"><span>${label}</span><span aria-hidden="true">${key===currentTheme?'✓':''}</span></button>`).join('');if(persist)try{localStorage.setItem('rms-theme',currentTheme);}catch{}}
+function chooseTheme(value){applyTheme(value);$('#theme-picker')?.removeAttribute?.('open');}
+function toggleTheme(){const picker=$('#theme-picker');if(picker)picker.open=!picker.open;}
+systemThemeQuery?.addEventListener?.('change',()=>{if(currentTheme==='system')applyTheme('system',false);});
+document.addEventListener?.('click',event=>{const picker=$('#theme-picker');if(picker?.open&&!picker.contains(event.target))picker.removeAttribute('open');});
+document.addEventListener?.('keydown',event=>{if(event.key==='Escape')$('#theme-picker')?.removeAttribute?.('open');});
+try{applyTheme(localStorage.getItem('rms-theme')||'system',false);}catch{applyTheme('system',false);}
 
 function highPriorityRequests(){return tickets.filter(t=>t.priority==='High'&&!terminal.includes(t.status)&&t.status!=='Draft');}
 function showHighPriority(){const rows=highPriorityRequests();openDialog(`<div class="modal-head"><h2>High-priority hiring · ${rows.length}</h2><button class="iconbtn" aria-label="Close" onclick="closeDialog()">${icon('close')}</button></div><div class="modal-body">${rows.map(t=>`<div class="priority-row"><div><b>${esc(t.title)} · ${esc(t.id)}</b><p>${esc(t.urgency||t.next)}</p></div>${priorityBadge(t)}<button class="primary" onclick="detail('${t.id}')">Review request</button></div>`).join('')||'<p>No high-priority requests.</p>'}</div>`);}

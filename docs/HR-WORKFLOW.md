@@ -50,6 +50,6 @@ Success messages inside dialogs disappear after 3.5 seconds; error messages expi
 - HR and Boss can use Edit login / password for every active account, including HR/Boss and the protected owner. This does not grant HR permission to change HR/Boss roles or remove the protected owner.
 - The initial admin username continues to work. Once its password is changed inside the system, the database password overrides the original environment password. Another HR/Boss can reset it. The environment hash alone no longer overrides an existing stored account password.
 
-- The icon-only theme switch offers the existing Blue theme and a Soft light theme with muted sage, cream and peach colours. It replaces the dark-mode option and remembers the choice in the current browser.
+- The top-bar appearance menu offers System default, Light, Dark and Soft. New browsers follow the operating system; saved choices remain in effect. System mode responds to operating-system colour changes.
 
 - Saving the position catalogue prompts for a unique custom Ticket ID (for example `ASD123`) for each new title. Cancel leaves the saved catalogue unchanged. Assigned IDs appear below the list and persist in shared settings. The first request for the title uses that ID; later requests receive unique sequential IDs. Existing titles can be saved without assigning IDs retroactively.
