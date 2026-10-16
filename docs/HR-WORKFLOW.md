@@ -1,19 +1,19 @@
 # HR workflow update
 
-- Only HR/admin approves hiring. Existing pending multi-person approval routes become a single HR step; completed historical decisions remain in history.
+- HR approves hiring. Existing pending multi-person approval routes become a single HR step; completed historical decisions remain in history.
 - Requestors enter HOD name (required) and HOD email (optional). A registered HOD with the matching email can review candidates for that position. HR enters salary range and funding details during review. Job grade is optional.
 - Salary maximum tracks the entered minimum when empty or lower. The server rejects maximums below minimum. Errors inside dialogs are shown inside the dialog, above the backdrop.
 - HR can edit open hiring position details without restarting the workflow. An additional HR salary/budget edit action is available while open. Requesters retain draft/clarification-only editing.
 - Recording a hire does not close a position. Filled is an open state; HR can continue hiring or manually close the position. HR may increase vacancies when continuing hiring.
 - HR's Close position dialog records Filled, Withdrawn or Cancelled as the outcome and allows HR to identify hired candidates. Existing/selected Hired candidates are preserved. Remaining Applied, Shortlisted, Interview and Offer candidates become Rejected; previously Rejected/Withdrawn candidates stay unchanged.
-- Closure prepares rejection email drafts from the saved template. Scheduling candidate interviews prepares interview email drafts. Drafts remain “Standby — not sent”; no sending provider or external email action is connected. Drafts appear in the position's HR-only email section.
-- HR/admin settings provide the editable position-title catalogue, safe ticket-ID renaming, interview/rejection subject/body templates, mailbox details. Supported template placeholders: {{candidate}}, {{position}}, {{ticketId}}, {{interviewDate}}, {{interviewer}}.
+- Closure prepares rejection email drafts from the saved template. Manual interview arrangements do not generate invitations or email drafts. Drafts remain “Standby — not sent”; no sending provider or external email action is connected. Drafts appear in the position's HR-only email section.
+- HR/Boss settings provide the editable position-title catalogue, safe ticket-ID renaming, interview/rejection subject/body templates, mailbox details. Supported template placeholders: {{candidate}}, {{position}}, {{ticketId}}, {{interviewDate}}, {{interviewer}}.
 - Renaming a ticket updates database references and preserves aliases, candidates, audit history and private document storage keys. New numbering continues beyond manually assigned numbers. HQ/COE prefixes remain required and set the location.
 - Pipeline typography is larger, overdue labels are bright red and the dashboard includes a Withdrawn position-outcome bar.
 
 These rules supersede earlier documentation about manager/Finance approvals or automatic final closure. Email drafts are stored with the position and withheld from non-HR accounts.
 
-- Requestors, the named HOD (matching staff email), and assigned interviewers can review candidates within their access. Schedule interview sends HR an in-app request; HR chooses the date and interviewer. Reject requires a reason and prepares an email draft on standby.
+- The requestor and named HOD (matching staff email) decide Interview / Reject / On Hold. Assigned interviewers can view their candidates and record feedback. HR arranges interviews manually outside the system and can optionally record the date and interviewer. After the interview, the requestor decides Offer / Reject / On Hold. Reject requires a reason and prepares an email draft on standby.
 - High-priority open requests appear in a red HR overview queue and notifications, with badges on lists and pipeline cards. HR notices for these requests are marked HIGH PRIORITY.
 - After a candidate is marked Hired, HR can use Close hiring position directly from the candidate list/profile. Closure remains manual.
 
@@ -21,3 +21,15 @@ These rules supersede earlier documentation about manager/Finance approvals or a
 
 - Access roles are Team lead, HR and Boss. Legacy admin accounts become Boss; requester, approver and interviewer accounts become Team lead without changing record ownership or passwords.
 - HR and Boss manage team leads, including password setup, removal and restoration. HR cannot modify HR/Boss accounts. Removing access disables login while retaining historical records. Boss manages HR/Boss memberships; the bootstrap owner is protected.
+
+## Requester-led flow
+
+1. Any signed-in Team lead, HR or Boss submits a request.
+2. HR reviews salary/budget and approves once. Hiring is ready for candidate uploads immediately.
+3. HR uploads candidate profiles, resumes and cover letters; the requester is notified.
+4. Requester selects Interview, Reject or On Hold. Interview creates an HR notice; dates and invitations are arranged externally. HR may record those details without generating a calendar event or email.
+5. After the interview, requester confirms it took place and selects Offer, Reject or On Hold. A candidate hold does not put the entire hiring position on hold.
+6. HR sends the offer externally, uploads an Offer letter document and records Preparing / Sent / Accepted / Declined / Withdrawn. Letter documents and salary details are HR/Boss-only.
+7. Acceptance marks the candidate Hired, counts that vacancy once and leaves closure to HR. Withdrawal, including after acceptance, releases the vacancy and preserves history. HR manually closes the hiring position when recruitment is complete.
+
+Success messages inside dialogs disappear after 3.5 seconds; error messages expire after 10 seconds. Existing legacy recruitment records retain their history and supported actions.

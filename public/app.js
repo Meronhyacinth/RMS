@@ -13,7 +13,7 @@ function nextFor(s){return {'Draft':'Complete and submit hiring request','Pendin
 let tickets;try{tickets=JSON.parse(localStorage.getItem('rms-tickets-v1'))||seed()}catch{tickets=seed()}
 let page='dashboard', filterStatus='', filterBU='', query='', tab='All requests', currentId=null;
 function save(){try{localStorage.setItem('rms-tickets-v1',JSON.stringify(tickets));localStorage.setItem('rms-settings',JSON.stringify(settings))}catch{toast('Storage is full. Changes remain in memory; export your requests.')}}
-function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),3500)}
+let toastTimer;function toast(s){globalThis.clearTimeout?.(toastTimer);$('#toast').textContent=s;$('#toast').classList.add('show');toastTimer=setTimeout(()=>{$('#toast').classList.remove('show');$('#toast').textContent='';},3500)}
 function log(t,text){t.history.push({at:new Date().toISOString(),actor:'Alex Lim · Demo HR',text});save()}
 function statusClass(s){return /Approval|HR Review|Offer/.test(s)?'amber':/Clarification|Rejected/.test(s)?'rose':/Filled|Ready|Approved/.test(s)?'teal':/Interview|Feedback/.test(s)?'purple':/Hold|Closed|Cancelled|Draft/.test(s)?'gray':''}
 function badge(s){return `<span class="pill ${statusClass(s)}">${esc(s)}</span>`}
