@@ -63,3 +63,11 @@ aside nav button:hover:not(:disabled),aside nav button:focus-visible:not(:disabl
 aside nav button.active:hover:not(:disabled),aside nav button.active:focus-visible:not(:disabled){background:#405b86;color:#fff}
 aside nav button:focus-visible:not(:disabled){outline:2px solid #a9c9ff;outline-offset:-2px}
 aside nav button:hover .navlabel,aside nav button:hover .navicon,aside nav button:focus-visible .navlabel,aside nav button:focus-visible .navicon{color:inherit}
+
+.policy-id-list{container-type:inline-size;gap:0;min-width:0}.policy-id-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:16px;padding:18px 0;min-width:0}.policy-id-identity{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}.policy-id-identity strong{font-size:15px;line-height:1.5}.policy-id-identity .id{font-size:13px}.policy-id-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.policy-id-actions button{min-height:40px;font-size:13px;padding:8px 12px}@container(max-width:620px){.policy-id-row{grid-template-columns:minmax(0,1fr)}.policy-id-actions{justify-content:flex-start}}
+
+/* Checkboxes keep their natural size and align with the first line of label text. */
+input[type="checkbox"]{appearance:auto;flex:0 0 18px;width:18px!important;height:18px!important;min-width:18px;min-height:18px!important;max-width:18px;max-height:18px;padding:0;margin:2px 0 0;accent-color:var(--blue);box-shadow:none;vertical-align:middle}
+.check-field,label:has(>input[type="checkbox"]){display:flex;flex-direction:row;align-items:flex-start;align-self:center;gap:10px;min-width:0;font-size:14px;line-height:1.5;color:var(--ink);font-weight:500}
+.check-field>span{min-width:0;overflow-wrap:anywhere}
+input[type="checkbox"]:focus-visible{outline:2px solid var(--blue);outline-offset:3px}

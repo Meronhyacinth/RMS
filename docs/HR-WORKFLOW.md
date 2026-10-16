@@ -33,3 +33,12 @@ These rules supersede earlier documentation about manager/Finance approvals or a
 7. Acceptance marks the candidate Hired, counts that vacancy once and leaves closure to HR. Withdrawal, including after acceptance, releases the vacancy and preserves history. HR manually closes the hiring position when recruitment is complete.
 
 Success messages inside dialogs disappear after 3.5 seconds; error messages expire after 10 seconds. Existing legacy recruitment records retain their history and supported actions.
+
+- Recorded hire milestone is set per candidate by HR in the candidate profile's offer follow-up, not in Settings. Offer accepted counts the hire upon acceptance; Employee joined waits for HR to confirm joining. Saving the same response twice does not count twice. The milestone is locked once the hire is counted.
+
+- Position management uses aligned rows with visible Edit ticket ID and Edit position controls. IDs keep the standard HQ/COE prefix and at least three numeric digits. HR can rename an ID without breaking candidate/document links.
+- Checkbox controls use a consistent 18px size aligned to the first text line across membership access, approvals, interview outcomes, hire milestones and closure selections.
+
+- Download visible records produces an Excel workbook with Hiring requests, Candidates, Interviews and Activity sheets. Each sheet has column filters, a frozen header and content-sized columns; records are sorted by ticket ID. It exports the records already permitted for the signed-in user, not attachment file contents.
+
+- Reports focus on open positions, candidate applications, hires and withdrawals, grouped by business unit, recruiter, position group and location. Request ageing/approval-duration tables and timing columns are removed from the report and its export.

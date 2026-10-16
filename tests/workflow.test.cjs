@@ -92,6 +92,8 @@ console.log('PASS: SLA fields removed; unset due dates remain optional and are n
 vm.runInContext(`liveMember={role:'hr'};members=[{email:'lead@example.test',name:'Lead',role:'team_lead',active:1},{email:'boss@example.test',name:'Boss',role:'boss',active:1,isOwner:true}];assert.ok(teamPage().includes('Remove access'));assert.ok(!teamPage().includes('<option value="boss">'));assert.equal(canManageMember(members[0]),true);assert.equal(canManageMember(members[1]),false);liveMember={role:'boss'};assert.ok(teamPage().includes('<option value="boss">Boss</option>'));liveMember={role:'team_lead'};assert.ok(!teamPage().includes('onsubmit="saveMember'));assert.equal(roleLabel('team_lead'),'Team lead');`,context);
 console.log('PASS: HR/Boss team access controls, exactly three role choices and team-lead management denial');
 
+vm.runInContext(`assert.ok(!settingsPage().includes('Recorded hire milestone'));const milestoneT=tickets.find(t=>t.candidates?.length),milestoneC=milestoneT.candidates[0];candidateOfferDialog(milestoneT.id,milestoneC.id);assert.ok(document.querySelector('#dialog').innerHTML.includes('Recorded hire milestone'));assert.ok(document.querySelector('#dialog').innerHTML.includes('Employee has joined'));`,context);
+
 vm.runInContext(`
 const pendingTimers=new Map();let timerId=0;globalThis.setTimeout=(fn,ms)=>{pendingTimers.set(++timerId,{fn,ms});return timerId};globalThis.clearTimeout=id=>pendingTimers.delete(id);
 let visibleDialogAlert=null;const toastDialog={open:true,querySelector:s=>s==='.dialog-alert'?visibleDialogAlert:s==='.modal-body'?{insertAdjacentHTML(){visibleDialogAlert={textContent:'',setAttribute(){},remove(){visibleDialogAlert=null}}}}:null};document.querySelector('#dialog');
