@@ -99,3 +99,9 @@ let visibleDialogAlert=null;const toastDialog={open:true,querySelector:s=>s==='.
 elements.set('#dialog',vm.runInContext('toastDialog',context));
 vm.runInContext(`toast('Request updated');assert.equal(visibleDialogAlert.textContent,'Request updated');for(const [id,timer] of [...pendingTimers])if(timer.ms===3500){timer.fn();pendingTimers.delete(id)}assert.equal(visibleDialogAlert,null);assert.equal(document.querySelector('#toast').textContent,'');toast('First');toast('Newest');assert.equal(visibleDialogAlert.textContent,'Newest');assert.equal([...pendingTimers.values()].filter(t=>t.ms===3500).length,2);for(const timer of pendingTimers.values())timer.fn();assert.equal(visibleDialogAlert,null);`,context);
 console.log('PASS: dialog success message and global toast expire; newer messages replace previous timers');
+
+vm.runInContext(`
+const unordered=[{id:'rejected',status:'Rejected',appliedAt:'2026-12-01'},{id:'old',status:'Applied',appliedAt:'2026-10-01'},{id:'hold',status:'On Hold',appliedAt:'2026-10-02'},{id:'hired',status:'Hired',appliedAt:'2026-11-01'},{id:'new',status:'Applied',appliedAt:'2026-10-16',createdAt:'2026-10-16T10:00:00Z'},{id:'withdrawn',status:'Withdrawn',appliedAt:'2026-12-02',offerResponse:'Accepted'},{id:'same-day',status:'Applied',appliedAt:'2026-10-16',createdAt:'2026-10-16T09:00:00Z'},{id:'no-date',status:'Applied'}].map(c=>({t:{id:'HQ-001'},c}));
+const originalOrder=unordered.map(r=>r.c.id).join(',');assert.equal(candidateOrder(unordered).map(r=>r.c.id).join(','),'new,same-day,old,no-date,hold,hired,rejected,withdrawn');assert.equal(unordered.map(r=>r.c.id).join(','),originalOrder);assert.ok(candidatePage().includes('newest first'));
+`,context);
+console.log('PASS: candidates sort by workflow group, then newest application and creation time; missing dates and withdrawn records remain ordered');
