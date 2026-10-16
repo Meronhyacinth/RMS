@@ -7,8 +7,27 @@ const document={querySelector(selector){if(!elements.has(selector))elements.set(
 const store=new Map();
 const context=vm.createContext({document,console,Date,JSON,String,Number,Math,Set,Blob,URL,FormData,assert,location:{hash:'',search:'?demo=1'},URLSearchParams,window:{addEventListener(){},scrollTo(){}},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},setTimeout(){}});
 vm.runInContext(fs.readFileSync(__dirname+'/../public/icons.js','utf8'),context);
+
+const routeStore=new Map(),routeEvents={},routeCalls=[];
+context.sessionStorage={getItem:k=>routeStore.get(k)||null,setItem:(k,v)=>routeStore.set(k,v)};
+context.window.history={state:null,pushState(state,unused,url){this.state=state;routeCalls.push({state,url});context.location.hash='';context.location.search='';},replaceState(state,unused,url){this.state=state;routeCalls.push({state,url});context.location.hash='';context.location.search='';}};
+context.window.addEventListener=(name,handler)=>routeEvents[name]=handler;
 vm.runInContext(fs.readFileSync(__dirname+'/../public/app.js','utf8'),context);
 vm.runInContext(fs.readFileSync(__dirname+'/../public/workspace.js','utf8'),context);
+
+for(const section of ['dashboard','requests','approvals','pipeline','candidates','archive','reports','audit','settings','workflow','notifications']){
+ vm.runInContext('navigate('+JSON.stringify(section)+')',context);
+ assert.equal(routeCalls.at(-1).url,'/');assert.equal(routeStore.get('rms-page'),section);
+}
+assert.equal(routeStore.get('rms-demo'),'1');
+routeEvents.popstate({state:{rmsPage:'candidates'}});
+assert.equal(vm.runInContext('page',context),'candidates');assert.equal(routeCalls.at(-1).url,'/');
+const reloaded=vm.createContext({URLSearchParams,location:{search:'',hash:''},window:{history:context.window.history},sessionStorage:context.sessionStorage});
+const routingSource=fs.readFileSync(__dirname+'/../public/app.js','utf8').split('const $=')[0];
+vm.runInContext(routingSource,reloaded);
+assert.equal(vm.runInContext('rmsDemoMode',reloaded),true);assert.equal(vm.runInContext('rmsInitialPage',reloaded),'candidates');
+vm.runInContext("navigate('dashboard')",context);
+console.log('PASS: every section uses root URL; back navigation and reload preserve section and demo mode');
 vm.runInContext(`
 const blocked=tickets.find(t=>t.status==='Pending Approval');
 transition(blocked.id,'Sourcing');
