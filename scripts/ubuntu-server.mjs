@@ -34,7 +34,7 @@ const rules=load('rules.ts'),auth=load('password-auth.ts',{env});
 const original=readFileSync(resolve(root,'lib/server.ts'),'utf8');
 const code=stripTypeScriptTypes(original,{mode:'strip'}).replace(/^import[^\n]*\n/gm,'').replace(/\bexport\s+/g,'');
 const {handle}=new Function('env','rules','auth','getChatGPTUser',`const {${Object.keys(rules).join(',')}}=rules;const {${Object.keys(auth).join(',')}}=auth;${code}\nreturn {handle};`)(env,rules,auth,async()=>null);
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.txt':'text/plain; charset=utf-8'};
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8'};
 const server=http.createServer(async(req,res)=>{try{
  const url=new URL(req.url,origin);
  if(url.pathname.startsWith('/api/rms/')){
