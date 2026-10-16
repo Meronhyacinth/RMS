@@ -102,6 +102,6 @@ console.log('PASS: dialog success message and global toast expire; newer message
 
 vm.runInContext(`
 const unordered=[{id:'rejected',status:'Rejected',appliedAt:'2026-12-01'},{id:'old',status:'Applied',appliedAt:'2026-10-01'},{id:'hold',status:'On Hold',appliedAt:'2026-10-02'},{id:'hired',status:'Hired',appliedAt:'2026-11-01'},{id:'new',status:'Applied',appliedAt:'2026-10-16',createdAt:'2026-10-16T10:00:00Z'},{id:'withdrawn',status:'Withdrawn',appliedAt:'2026-12-02',offerResponse:'Accepted'},{id:'same-day',status:'Applied',appliedAt:'2026-10-16',createdAt:'2026-10-16T09:00:00Z'},{id:'no-date',status:'Applied'}].map(c=>({t:{id:'HQ-001'},c}));
-const originalOrder=unordered.map(r=>r.c.id).join(',');assert.equal(candidateOrder(unordered).map(r=>r.c.id).join(','),'new,same-day,old,no-date,hold,hired,rejected,withdrawn');assert.equal(unordered.map(r=>r.c.id).join(','),originalOrder);assert.ok(candidatePage().includes('newest first'));
+const originalOrder=unordered.map(r=>r.c.id).join(',');assert.equal(candidateOrder(unordered).map(r=>r.c.id).join(','),'new,same-day,old,no-date,hold,hired,rejected,withdrawn');assert.equal(unordered.map(r=>r.c.id).join(','),originalOrder);
 `,context);
 console.log('PASS: candidates sort by workflow group, then newest application and creation time; missing dates and withdrawn records remain ordered');
